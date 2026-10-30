@@ -5,7 +5,7 @@ import streamlit as st
 from hp import dibujo
 from hp.difuso import KYTE_DOOLITTLE, PEPTIDOS, a_hp, fraccion_h, grados_kd, presupuesto, rampa, veredicto
 from hp.motor import LIMITES, NOMBRES, ConfigHP, grados_crisp, reconstruir_coordenadas
-from hp.ui import encabezado, limpiar, optimo, precalculado, presets, referencia, resolver, siguiente, svg
+from hp.ui import encabezado, limpiar, optimo, precalculado, presets, referencia, resolver, navegacion, svg
 
 encabezado('Laboratorio',
            'Todo junto y sin guion: elige una secuencia, una configuración del buscador y mira qué forma encuentra, '
@@ -115,4 +115,4 @@ with der:
                            file_name=f'plegamiento_{sec}.json', mime='application/json',
                            icon=':material/download:', width='stretch')
 
-siguiente('paginas/historia.py', 'Historia del proyecto')
+navegacion('paginas/laboratorio.py')

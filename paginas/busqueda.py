@@ -5,7 +5,7 @@ import streamlit as st
 from hp import dibujo
 from hp.motor import MOTIVOS, reconstruir_coordenadas
 from hp.ui import (AZUL, GRIS, NARANJA, avanzar, controles, encabezado, ficha, fragmento, idea, optimo, quieto,
-                   resolver_con_traza, secuencia_hp, siguiente, svg)
+                   resolver_con_traza, secuencia_hp, navegacion, svg)
 
 encabezado('Cómo busca A*',
            'En vez de probar todas las formas, A* construye la cadena bolita a bolita y en cada momento sigue '
@@ -129,4 +129,4 @@ En el proyecto la garantía se cambia a veces por velocidad, de forma consciente
 """
     )
 
-siguiente('paginas/reglas.py', 'Reglas de poda')
+navegacion('paginas/busqueda.py')

@@ -7,7 +7,7 @@ import streamlit as st
 
 from hp import dibujo
 from hp.motor import NOMBRES
-from hp.ui import AQUA, AZUL, GRIS, NARANJA, TINTA_2, banco, datos, ecuacion, encabezado, ficha, idea, siguiente, svg
+from hp.ui import AQUA, AZUL, GRIS, NARANJA, TINTA_2, banco, datos, ecuacion, encabezado, ficha, idea, navegacion, svg
 
 encabezado('Robustez: un examinador adversario',
            'Ir bien en promedio no es lo mismo que no tener puntos débiles. Aquí un adversario busca a propósito las '
@@ -294,4 +294,4 @@ st.caption('Ningún rasgo de la secuencia explica bien el peso (todas las correl
            'marcada, y aún en el límite del azar, es que el peso tiende a irse a las secuencias baratas.')
 st.caption('Límites: una sola corrida con una semilla, 10 rondas y un banco pequeño (41 + 40 secuencias).')
 
-siguiente('paginas/difusa.py', 'Lógica difusa')
+navegacion('paginas/adversario.py')

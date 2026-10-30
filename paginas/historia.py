@@ -2,7 +2,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from hp.ui import AZUL, GRIS, TINTA_2, encabezado, idea
+from hp.ui import AZUL, GRIS, TINTA_2, encabezado, idea, navegacion
 
 encabezado('Historia y referencias',
            'La app está ordenada por ideas, no por fechas. Aquí va el orden en que se construyó, los errores que '
@@ -157,3 +157,5 @@ def enlazar(ref):
 for tema, refs in REFERENCIAS.items():
     st.markdown(f'**{tema}**')
     st.markdown(''.join(f'<div class="ref">{enlazar(r)}</div>' for r in refs), unsafe_allow_html=True)
+
+navegacion('paginas/historia.py')

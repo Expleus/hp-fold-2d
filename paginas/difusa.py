@@ -10,7 +10,7 @@ from hp.difuso import (KYTE_DOOLITTLE, NOMBRES_AA, PEPTIDOS, a_hp, ajustar_rampa
                        energias_todas, fraccion_h, grados_kd, presupuesto, rampa, tabla_r0, veredicto)
 from hp.motor import CONFIG_ACTUAL, grados_crisp
 from hp.ui import (AZUL, GRIS, GRIS_CLARO, NARANJA, TINTA_2, aviso, datos, ecuacion, encabezado, idea, limpiar,
-                   optimo, precalculado, resolver, siguiente, svg)
+                   optimo, precalculado, resolver, navegacion, svg)
 
 encabezado('Lógica difusa: del sí/no al «cuánto»',
            'El modelo HP dice que cada aminoácido es H o P, y R0 dice que una secuencia pliega o no pliega. Las dos '
@@ -357,4 +357,4 @@ with pest2:
         st.caption(f'Entre {PRESUPUESTO[0]:,} y {PRESUPUESTO[1]:,} nodos. El punto naranja es la secuencia de la '
                    f'derecha.'.replace(',', ' '))
 
-siguiente('paginas/laboratorio.py', 'Laboratorio')
+navegacion('paginas/difusa.py')

@@ -5,7 +5,7 @@ import streamlit as st
 from hp import dibujo
 from hp.motor import CONFIG_ACTUAL, contactos, grados_crisp, paridad, reconstruir_coordenadas
 from hp.ui import (AQUA, AZUL, GRIS, GRIS_CLARO, NARANJA, datos, ecuacion, encabezado, idea, optimo, referencia,
-                   resolver, secuencia_hp, siguiente, svg)
+                   resolver, secuencia_hp, navegacion, svg)
 
 encabezado('La heurística: cuánto falta por ganar',
            'A* necesita, para cada cadena a medio hacer, una estimación rápida de cuántos contactos podrían añadir las '
@@ -226,4 +226,4 @@ with der:
     st.caption(f'Los cuadrados grises agotaron el tope de {tope:,} nodos sin terminar.'.replace(',', '.') +
                ' El punto dulce depende de la secuencia y de las otras cinco perillas: por eso se ajusta con datos.')
 
-siguiente('paginas/cmaes.py', 'Ajuste con CMA-ES')
+navegacion('paginas/heuristica.py')

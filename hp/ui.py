@@ -159,10 +159,25 @@ def svg(codigo):
     st.markdown(codigo.replace('\n', ' '), unsafe_allow_html=True)
 
 
-def siguiente(ruta, texto):
+# Orden de lectura de las páginas, para los enlaces «Anterior» y «Siguiente» del pie.
+ORDEN = [('paginas/inicio.py', 'Inicio'), ('paginas/problema.py', 'El problema'),
+         ('paginas/busqueda.py', 'Cómo busca A*'), ('paginas/reglas.py', 'Reglas de poda'),
+         ('paginas/heuristica.py', 'La heurística'), ('paginas/cmaes.py', 'Ajuste con CMA-ES'),
+         ('paginas/adversario.py', 'Robustez: el adversario'), ('paginas/difusa.py', 'Lógica difusa'),
+         ('paginas/laboratorio.py', 'Laboratorio'), ('paginas/historia.py', 'Historia del proyecto')]
+
+
+def navegacion(actual):
+    """Pie de página con enlaces a la página anterior y a la siguiente de `actual` (su ruta) en ORDEN."""
+    i = [r for r, _ in ORDEN].index(actual)
     st.divider()
-    _, der = st.columns([3, 2])
-    der.page_link(ruta, label=f'Siguiente: {texto}', icon=':material/arrow_forward:', width='stretch')
+    izq, _, der = st.columns([2, 1, 2])
+    if i > 0:
+        ruta, texto = ORDEN[i - 1]
+        izq.page_link(ruta, label=f'Anterior: {texto}', icon=':material/arrow_back:', width='stretch')
+    if i < len(ORDEN) - 1:
+        ruta, texto = ORDEN[i + 1]
+        der.page_link(ruta, label=f'Siguiente: {texto}', icon=':material/arrow_forward:', width='stretch')
 
 
 @st.cache_data

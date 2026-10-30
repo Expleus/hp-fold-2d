@@ -5,7 +5,7 @@ import streamlit as st
 from hp import dibujo
 from hp.difuso import conformaciones_posibles, formato_grande
 from hp.motor import contactos, reconstruir_coordenadas
-from hp.ui import AZUL, GRIS, encabezado, ficha, idea, optimo, referencia, resolver, secuencia_hp, siguiente, svg
+from hp.ui import AZUL, GRIS, encabezado, ficha, idea, optimo, referencia, resolver, secuencia_hp, navegacion, svg
 
 encabezado('El problema: plegar una cadena',
            'Una proteína es una cadena de aminoácidos que, en agua, se dobla sola hasta una forma concreta, y esa '
@@ -153,4 +153,4 @@ with st.expander('De dónde salen estos números'):
 """
     )
 
-siguiente('paginas/busqueda.py', 'Cómo busca A*')
+navegacion('paginas/problema.py')

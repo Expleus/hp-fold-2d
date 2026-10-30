@@ -8,7 +8,7 @@ import streamlit as st
 
 from hp.motor import CONFIG_ACTUAL, LIMITES, NOMBRES, ConfigHP, a_estrella
 from hp.ui import (AQUA, AZUL, GRIS, NARANJA, TINTA_2, avanzar, controles, datos, ecuacion, encabezado,
-                   fragmento, idea, presets, quieto, siguiente)
+                   fragmento, idea, presets, quieto, navegacion)
 
 encabezado('Ajuste automático con CMA-ES',
            'La heurística y las reglas tienen seis números que hasta ahora se eligieron «a mano». ¿Y si hay valores '
@@ -348,4 +348,4 @@ with st.expander('Valores encontrados y convergencia'):
     st.caption('Se muestra la mejor configuración encontrada hasta cada generación. El costo a veces sube: es el '
                'precio de bajar el error, que manda primero.')
 
-siguiente('paginas/adversario.py', 'Robustez: el adversario')
+navegacion('paginas/cmaes.py')

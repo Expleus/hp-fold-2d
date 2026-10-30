@@ -4,7 +4,7 @@ import streamlit as st
 
 from hp import dibujo
 from hp.motor import CONFIG_ACTUAL, MOTIVOS, a_estrella
-from hp.ui import AZUL, NARANJA, aviso, encabezado, idea, optimo, resolver, siguiente, svg
+from hp.ui import AZUL, NARANJA, aviso, encabezado, idea, optimo, resolver, navegacion, svg
 
 encabezado('Reglas de poda',
            'Cada cadena a medio hacer tiene hasta tres hijos, y cada hijo, tres nietos. Una regla que descarta un hijo '
@@ -219,4 +219,4 @@ if sin_r4.energia < todas.energia:
           f'({sin_r4.energia:g} frente a {todas.energia:g}){extra}. Las apuestas de poda interactúan con la '
           f'heurística de formas difíciles de prever: de ahí la idea de ajustarlas con datos.')
 
-siguiente('paginas/heuristica.py', 'La heurística')
+navegacion('paginas/reglas.py')
