@@ -32,6 +32,24 @@ h2, h3 {letter-spacing: -0.01em;}
            background: #eeede8; color: #52514e; margin-right: .3rem;}
 .ref {padding-left: 2em !important; text-indent: -2em; margin: 0 0 .55rem 0; color: #1d1c1a; line-height: 1.5;}
 .mono {font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em;}
+[data-testid="stMarkdownContainer"]:has(> .eq) {overflow: visible !important;}
+.eq {position: relative; margin: 0; padding: .05rem 1.9rem .05rem .4rem; border-radius: 10px; cursor: help;
+     transition: background-color .12s;}
+.eq:hover, .eq:focus-within {background: #f5f4f0; outline: none;}
+.eq::after {content: '?'; position: absolute; top: 50%; right: .6rem; transform: translateY(-50%); width: 1.15rem;
+            height: 1.15rem; border-radius: 50%; border: 1px solid #c3c2b7; color: #898781; font-size: .72rem;
+            font-weight: 600; line-height: 1.1rem; text-align: center;}
+.eq:hover::after, .eq:focus-within::after {border-color: #2a78d6; color: #2a78d6;}
+.eq .katex-display {margin: .55rem 0; overflow-x: auto; overflow-y: hidden;}
+.eq-tip {display: none; position: absolute; z-index: 1000; top: calc(100% - .2rem); left: 0; right: 0;
+         margin: 0 auto; width: fit-content; max-width: min(40rem, 100%); background: #fff; color: #1d1c1a;
+         border: 1px solid #e1e0d9; border-radius: 10px; box-shadow: 0 10px 28px rgba(29, 28, 26, .14);
+         padding: .65rem .95rem; font-size: .9rem; line-height: 1.45; text-align: left; cursor: auto;}
+.eq:hover .eq-tip, .eq:focus-within .eq-tip {display: block;}
+.eq-tip p {margin: 0 0 .4rem 0 !important; color: #52514e; font-size: .9rem !important;}
+.eq-tip ul {margin: 0 !important; padding-left: 1.1rem;}
+.eq-tip li {margin: .12rem 0 !important; font-size: .9rem !important;}
+.eq-tip li p {margin: 0 !important; color: #1d1c1a;}
 [data-testid="stMetricValue"] {font-size: 1.6rem;}
 </style>
 """
@@ -52,6 +70,61 @@ def idea(texto, titulo='La idea'):
 
 def aviso(texto):
     st.markdown(f'<div class="aviso">{texto}</div>', unsafe_allow_html=True)
+
+
+def ecuacion(latex, simbolos, nota=None):
+    """Ecuación en bloque. Al pasar el mouse por encima (o tocarla) aparece qué es cada símbolo.
+
+    simbolos: lista de (símbolo en LaTeX, descripción en Markdown); nota: frase opcional sobre la ecuación entera.
+    Las líneas en blanco alrededor del HTML hacen que el Markdown de dentro (y su LaTeX) se siga interpretando."""
+    filas = '\n'.join(f'- ${s}$ — {d}' for s, d in simbolos)
+    nota = f'{nota}\n\n' if nota else ''
+    st.markdown(f'<div class="eq" tabindex="0">\n\n$$\n{latex}\n$$\n\n<div class="eq-tip">\n\n{nota}{filas}\n\n'
+                '</div></div>', unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------------- reproducir
+# Un reproductor es un st.fragment: mientras suena se vuelve a ejecutar solo cada `segundos` y avanza un paso el
+# slider `clave`. Solo los ticks del reloj avanzan; las ejecuciones completas y los clics marcan `_quieto`.
+
+def reproduciendo(clave):
+    return st.session_state.get(f'{clave}_play', False)
+
+
+def quieto(clave):
+    """La próxima ejecución del fragmento no debe avanzar (la causó un clic, no el reloj)."""
+    st.session_state[f'{clave}_quieto'] = True
+
+
+def fragmento(clave, segundos=0.8):
+    """Decorador del reproductor: un fragmento que se repite solo mientras `clave` se reproduce."""
+    quieto(clave)
+    return st.fragment(run_every=segundos if reproduciendo(clave) else None)
+
+
+def avanzar(clave, total):
+    """Al principio del fragmento, antes de crear el slider `clave`. Al llegar al final se detiene."""
+    st.session_state.setdefault(clave, 1)
+    if st.session_state.pop(f'{clave}_quieto', False) or not reproduciendo(clave):
+        return
+    st.session_state[clave] = min(st.session_state[clave] + 1, total)
+    if st.session_state[clave] >= total:
+        st.session_state[f'{clave}_play'] = False
+        st.rerun()  # página entera: así el fragmento deja de repetirse y el botón vuelve a «Reproducir»
+
+
+def _alternar(clave, total):
+    st.session_state[f'{clave}_play'] = not reproduciendo(clave)
+    if reproduciendo(clave) and st.session_state.get(clave, 1) >= total:
+        st.session_state[clave] = 1  # si ya estaba al final, vuelve a empezar
+    quieto(clave)
+
+
+def boton_reproducir(clave, total, donde=st, **kw):
+    activo = reproduciendo(clave)
+    if donde.button('Pausa' if activo else 'Reproducir', icon=':material/pause:' if activo else ':material/play_arrow:',
+                    key=f'{clave}_btn', type='primary', on_click=_alternar, args=(clave, total), **kw):
+        st.rerun()  # el intervalo del fragmento se fija al dibujar la página entera
 
 
 def ficha(clave, valor, texto):

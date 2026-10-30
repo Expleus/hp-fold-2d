@@ -7,7 +7,7 @@ import streamlit as st
 
 from hp import dibujo
 from hp.motor import NOMBRES
-from hp.ui import AQUA, AZUL, GRIS, NARANJA, TINTA_2, banco, datos, encabezado, ficha, idea, siguiente, svg
+from hp.ui import AQUA, AZUL, GRIS, NARANJA, TINTA_2, banco, datos, ecuacion, encabezado, ficha, idea, siguiente, svg
 
 encabezado('Robustez: un examinador adversario',
            'Ir bien en promedio no es lo mismo que no tener puntos débiles. Aquí un adversario busca a propósito las '
@@ -90,8 +90,17 @@ with izq:
 
 st.markdown('La regla de Hedge, aplicada al examinador: el peso de cada secuencia $s$ en la ronda $t$ crece '
             'exponencialmente con la pérdida que el afinador **ya acumuló** en ella.')
-st.latex(r'p_t(s) \;=\; \frac{e^{\eta\, L_{t-1}(s)}}{\sum_{s^\prime} e^{\eta\, L_{t-1}(s^\prime)}}\,, \qquad '
-         r'L_{t-1}(s) = \sum_{k<t} \ell(\theta_k, s)')
+ecuacion(r'p_t(s) \;=\; \frac{e^{\eta\, L_{t-1}(s)}}{\sum_{s^\prime} e^{\eta\, L_{t-1}(s^\prime)}}\,, \qquad '
+         r'L_{t-1}(s) = \sum_{k<t} \ell(\theta_k, s)',
+         [(r'p_t(s)', 'probabilidad de que el examinador ponga la secuencia $s$ en la ronda $t$.'),
+          (r'L_{t-1}(s)', 'pérdida que el afinador acumuló en $s$ en todas las rondas anteriores.'),
+          (r'\eta', 'sensibilidad: cuánto reacciona el examinador a esa pérdida (con 0, todas pesarían igual).'),
+          (r'e^{\eta L}', 'hace que el peso crezca exponencialmente con la pérdida.'),
+          (r'\textstyle\sum_{s^\prime}', 'suma sobre todas las secuencias: divide para que las probabilidades '
+                                         'sumen 1.'),
+          (r'\ell(\theta_k, s)', r'pérdida en $s$ de la configuración $\theta_k$, la que eligió el afinador en la '
+                                 'ronda $k$ (se explica justo abajo).')],
+         nota='Donde el afinador viene fallando, el examinador pregunta más: ataca sus puntos débiles.')
 st.caption(f'η controla cuánto reacciona el examinador. Con η = √(8 ln N / T) = '
            f'{math.sqrt(8 * math.log(N) / T):.2f} (N = {N} secuencias, T = {T} rondas), la teoría garantiza que su '
            'desventaja frente al mejor examen fijo posible no pasa de √(ln N / 2T) por ronda.')
@@ -106,11 +115,17 @@ Una carrera contra la configuración de libro, secuencia por secuencia:
 
 - si θ **no llega a la mejor energía**, queda descalificada: $\ell = 1$;
 - si llega, se compara cuántos nodos gastó con los que gastó la de libro.
-
-$$
-\ell = \frac{1}{2}\left(1 + \log_{10}\frac{\text{nodos}_\theta}{\text{nodos}_\text{libro}}\right)
-$$
-
+"""
+    )
+    ecuacion(r'\ell = \frac{1}{2}\left(1 + \log_{10}\frac{\text{nodos}_\theta}{\text{nodos}_\text{libro}}\right)',
+             [(r'\ell', 'pérdida de la configuración en una secuencia: 0 es lo mejor, 1 lo peor.'),
+              (r'\text{nodos}_\theta', r'cadenas que A* tuvo que expandir con la configuración $\theta$.'),
+              (r'\text{nodos}_\text{libro}', 'las que expandió con la configuración de libro.'),
+              (r'\log_{10}', r'mide el cociente en potencias de 10: +1 si $\theta$ gastó diez veces más, −1 si '
+                             'gastó diez veces menos, 0 si igual.'),
+              (r'\tfrac{1}{2}(1 + \cdot)', 'lleva ese rango de −1…+1 a 0…1.')])
+    st.markdown(
+        r"""
 recortada entre 0 y 1: **0.5 es empatar**, 0 es ser diez veces más rápida y 1 diez veces más lenta.
 """
     )

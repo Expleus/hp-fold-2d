@@ -4,8 +4,8 @@ import streamlit as st
 
 from hp import dibujo
 from hp.motor import CONFIG_ACTUAL, contactos, grados_crisp, paridad, reconstruir_coordenadas
-from hp.ui import (AQUA, AZUL, GRIS, GRIS_CLARO, NARANJA, datos, encabezado, idea, optimo, referencia, resolver,
-                   secuencia_hp, siguiente, svg)
+from hp.ui import (AQUA, AZUL, GRIS, GRIS_CLARO, NARANJA, datos, ecuacion, encabezado, idea, optimo, referencia,
+                   resolver, secuencia_hp, siguiente, svg)
 
 encabezado('La heurística: cuánto falta por ganar',
            'A* necesita, para cada cadena a medio hacer, una estimación rápida de cuántos contactos podrían añadir las '
@@ -28,14 +28,16 @@ anterior y a la siguiente, así que le quedan **unos 2 huecos** donde podría to
 
 Por tanto, si quedan $H_{\\text{rest}}$ bolitas H por colocar, como mucho aportarán unos $2\\,H_{\\text{rest}}$
 contactos más:
-
-$$
-h_{\\text{básica}} = -\\,a_b \\cdot H_{\\text{rest}}, \\qquad a_b = 2
-$$
-
-Es fácil de calcular, pero muy optimista: supone que **todas** las H encuentran pareja en **todos** sus huecos.
 """
     )
+    ecuacion(r'h_{\text{básica}} = -\,a_b \cdot H_{\text{rest}}, \qquad a_b = 2',
+             [(r'h_{\text{básica}}', 'la estimación: cuánta energía pueden aportar todavía las bolitas que faltan.'),
+              (r'H_{\text{rest}}', 'cuántas bolitas H quedan por colocar.'),
+              (r'a_b', 'contactos que se le suponen a cada H que falta: sus 2 huecos libres. Es una de las perillas.')],
+             nota='El signo menos es porque en el modelo HP cada contacto H–H vale −1: más contactos, energía más '
+                  'negativa.')
+    st.markdown('Es fácil de calcular, pero muy optimista: supone que **todas** las H encuentran pareja en **todos** '
+                'sus huecos.')
 
 # ---------------------------------------------------------------- paridad
 st.markdown('### Segunda cota: el tablero de ajedrez')
@@ -57,11 +59,19 @@ Pinta la cuadrícula como un tablero de ajedrez. Cada paso de la cadena cambia d
 
 Conclusión: **un contacto siempre une una H par con una H impar**. Si hay pocas H impares, da igual cuántas pares
 haya: no tienen con quién emparejarse. Cada H aporta como mucho 2 contactos (3 si está en un extremo):
-
-$$
-|E| \\le 2\\cdot\\min(H_{{\\text{{par}}}},\\ H_{{\\text{{impar}}}}) + 2
-$$
-
+"""
+    )
+    ecuacion(r'|E| \le 2\cdot\min(H_{\text{par}},\ H_{\text{impar}}) + 2',
+             [(r'|E|', 'cuántos contactos H–H tiene la forma (la energía sin el signo menos).'),
+              (r'H_{\text{par}}', 'bolitas H en posiciones pares (0, 2, 4…).'),
+              (r'H_{\text{impar}}', 'bolitas H en posiciones impares (1, 3, 5…).'),
+              (r'\min', 'el menor de los dos: cada contacto necesita una H de cada grupo, así que manda el más '
+                        'pequeño.'),
+              (r'2\,\cdot', 'cada H tiene como mucho 2 huecos libres para contactos.'),
+              (r'+\,2', 'los dos extremos de la cadena tienen un hueco extra cada uno.')],
+             nota='Es un techo: la mejor forma puede tener menos contactos, nunca más.')
+    st.markdown(
+        f"""
 En la figura hay **{pares:g} H pares** y **{impares:g} impares**: como mucho {2 * min(pares, impares) + 2:g}
 contactos. La mejor forma consigue {-r_hero.energia:g}.
 """
@@ -120,12 +130,25 @@ st.markdown(
 Las dos cotas son correctas, así que la estimación se queda con **la más ajustada** de las dos. Y a la de paridad, que
 habla de la cadena **entera**, se le descuenta lo que ya se consiguió ($g$ es negativo: $-a_g\,g$ resta contactos
 ya hechos):
-
-$$
-h = \max\Big(\;-a_b\,H_{\text{rest}}\;,\;\; -\big(a_p\cdot\min(H_{\text{par}},H_{\text{impar}}) + c\big) - a_g\, g\;\Big)
-\qquad f = g + w\cdot h
-$$
-
+"""
+)
+ecuacion(r'h = \max\Big(\;-a_b\,H_{\text{rest}}\;,\;\; -\big(a_p\cdot\min(H_{\text{par}},H_{\text{impar}}) + c\big)'
+         r' - a_g\, g\;\Big) \qquad f = g + w\cdot h',
+         [(r'h', 'estimación de la energía que aún se puede ganar.'),
+          (r'g', 'energía de los contactos ya formados (cero o negativa).'),
+          (r'H_{\text{rest}}', 'bolitas H que faltan por colocar.'),
+          (r'H_{\text{par}},\ H_{\text{impar}}', 'bolitas H en posiciones pares e impares de toda la cadena.'),
+          (r'a_b', 'contactos por cada H que falta, en la cota de los huecos (libro: 2).'),
+          (r'a_p', 'contactos por H del grupo más pequeño, en la cota de paridad (libro: 2).'),
+          (r'c', 'margen extra de la cota de paridad, por los extremos (libro: 2).'),
+          (r'a_g', 'cuánto de lo ya conseguido se descuenta de la cota de paridad, que habla de la cadena entera '
+                   '(libro: 1).'),
+          (r'f', 'la promesa: A* ordena la fila por este número.'),
+          (r'w', 'cuánto pesa la estimación frente a lo ya conseguido (libro: 1).')],
+         nota='Las dos cotas son negativas; el $\\max$ se queda con la menos negativa, que es la que promete menos y '
+              'por tanto la más ajustada.')
+st.markdown(
+    r"""
 Con los valores «de libro» $a_b = a_p = c = 2$, $a_g = 1$ y $w = 1$ la estimación nunca promete de menos. Esos seis
 números son las **perillas** que la página siguiente ajusta automáticamente.
 """

@@ -7,7 +7,8 @@ import pandas as pd
 import streamlit as st
 
 from hp.motor import CONFIG_ACTUAL, LIMITES, NOMBRES, ConfigHP, a_estrella
-from hp.ui import AQUA, AZUL, GRIS, NARANJA, TINTA_2, datos, encabezado, idea, presets, siguiente
+from hp.ui import (AQUA, AZUL, GRIS, NARANJA, TINTA_2, avanzar, boton_reproducir, datos, ecuacion, encabezado,
+                   fragmento, idea, presets, quieto, siguiente)
 
 encabezado('Ajuste automático con CMA-ES',
            'La heurística y las reglas tienen seis números que hasta ahora se eligieron «a mano». ¿Y si hay valores '
@@ -156,56 +157,64 @@ def fondo(nombre):
     return pd.DataFrame(filas)
 
 
-izq, der = st.columns([3, 2], gap='large')
-with der:
-    nombre = st.segmented_control('Problema', list(FUNCIONES), default='Valle inclinado', key='cm_fun')
-    nombre = nombre or 'Valle inclinado'
-    g = st.slider('Generación', 1, GENS, 1, key='cm_gen')
-    gens = demo(nombre)
-    G = gens[g - 1]
-    st.markdown(
-        f"""
+@fragmento('cm_gen', segundos=0.6)
+def nube():
+    avanzar('cm_gen', GENS)
+    izq, der = st.columns([3, 2], gap='large')
+    with der:
+        nombre = st.segmented_control('Problema', list(FUNCIONES), default='Valle inclinado', key='cm_fun')
+        nombre = nombre or 'Valle inclinado'
+        g = st.slider('Generación', 1, GENS, key='cm_gen', on_change=quieto, args=('cm_gen',))
+        boton_reproducir('cm_gen', GENS)
+        gens = demo(nombre)
+        G = gens[g - 1]
+        st.markdown(
+            f"""
 1. **Muestrear.** Se lanzan {LAM} puntos al azar desde una «nube» (la elipse azul).
 2. **Ordenar.** Se evalúan y se ordenan. Solo importa el **orden**, no cuánto mejor es uno que otro.
 3. **Moverse.** El centro de la nube (rombo naranja) se desplaza hacia los {MU_} mejores (puntos azules).
 4. **Deformarse.** La nube se **estira** en la dirección en que se avanzó y se **encoge** cuando ya está cerca.
 """
-    )
-    st.caption(f'Tamaño de la nube en esta generación: σ = {G["sigma"]:.3f}. Mejor valor de la generación: '
-               f'{min(G["vals"]):.3g}.')
-with izq:
-    fd = fondo(nombre)
-    capa = alt.Chart(fd).mark_rect().encode(
-        x=alt.X('x:Q', title='Perilla 1', scale=alt.Scale(domain=[-4, 4], nice=False)), x2='x2:Q',
-        y=alt.Y('y:Q', title='Perilla 2', scale=alt.Scale(domain=[-4, 4], nice=False)), y2='y2:Q',
-        color=alt.Color('v:Q', scale=alt.Scale(range=['#fbfaf7', '#9fb3cc']), legend=None), tooltip=alt.value(None))
-    m = np.array(G['media'])
-    S = (G['sigma'] ** 2) * np.array(G['C'])
-    val, vec = np.linalg.eigh(S)
-    t = np.linspace(0, 2 * np.pi, 80)
-    pts = m[:, None] + 2 * vec @ (np.sqrt(np.maximum(val, 0))[:, None] * np.vstack([np.cos(t), np.sin(t)]))
-    elipse = alt.Chart(pd.DataFrame(dict(x=pts[0], y=pts[1], o=range(80)))).mark_line(
-        color=AZUL, strokeWidth=2, clip=True).encode(x='x:Q', y='y:Q', order='o:Q')
-    X = np.array(G['X'])
-    dfp = pd.DataFrame(dict(x=X[:, 0], y=X[:, 1], valor=G['vals'],
-                            tipo=['elegido' if i in G['elegidos'] else 'descartado' for i in range(len(X))]))
-    puntos = alt.Chart(dfp).mark_point(size=70, strokeWidth=2, clip=True).encode(
-        x='x:Q', y='y:Q',
-        color=alt.Color('tipo:N', scale=alt.Scale(domain=['elegido', 'descartado'], range=[AZUL, GRIS]),
-                        legend=alt.Legend(orient='bottom', title=None)),
-        fill=alt.Fill('tipo:N', scale=alt.Scale(domain=['elegido', 'descartado'], range=[AZUL, 'transparent']),
-                      legend=None),
-        tooltip=[alt.Tooltip('valor:Q', title='Valor', format='.3g')])
-    camino = pd.DataFrame([dict(x=x[0], y=x[1], o=i) for i, x in enumerate(d['media'] for d in gens[:g])])
-    rastro = alt.Chart(camino).mark_line(color=NARANJA, strokeWidth=1.5, opacity=0.6, clip=True).encode(x='x:Q', y='y:Q',
-                                                                                              order='o:Q')
-    centro = alt.Chart(pd.DataFrame(dict(x=[m[0]], y=[m[1]]))).mark_point(
-        shape='diamond', size=140, filled=True, color=NARANJA, stroke='white', strokeWidth=1.5, clip=True).encode(x='x:Q', y='y:Q')
-    meta = FUNCIONES[nombre][2]
-    objetivo = alt.Chart(pd.DataFrame(dict(x=[meta[0]], y=[meta[1]]))).mark_point(
-        shape='cross', size=90, color=TINTA_2, filled=True).encode(x='x:Q', y='y:Q')
-    st.altair_chart((capa + objetivo + rastro + elipse + puntos + centro).properties(height=430),
-                    width='stretch')
+        )
+        st.caption(f'Tamaño de la nube en esta generación: σ = {G["sigma"]:.3f}. Mejor valor de la generación: '
+                   f'{min(G["vals"]):.3g}.')
+    with izq:
+        fd = fondo(nombre)
+        capa = alt.Chart(fd).mark_rect().encode(
+            x=alt.X('x:Q', title='Perilla 1', scale=alt.Scale(domain=[-4, 4], nice=False)), x2='x2:Q',
+            y=alt.Y('y:Q', title='Perilla 2', scale=alt.Scale(domain=[-4, 4], nice=False)), y2='y2:Q',
+            color=alt.Color('v:Q', scale=alt.Scale(range=['#fbfaf7', '#9fb3cc']), legend=None), tooltip=alt.value(None))
+        m = np.array(G['media'])
+        S = (G['sigma'] ** 2) * np.array(G['C'])
+        val, vec = np.linalg.eigh(S)
+        t = np.linspace(0, 2 * np.pi, 80)
+        pts = m[:, None] + 2 * vec @ (np.sqrt(np.maximum(val, 0))[:, None] * np.vstack([np.cos(t), np.sin(t)]))
+        elipse = alt.Chart(pd.DataFrame(dict(x=pts[0], y=pts[1], o=range(80)))).mark_line(
+            color=AZUL, strokeWidth=2, clip=True).encode(x='x:Q', y='y:Q', order='o:Q')
+        X = np.array(G['X'])
+        dfp = pd.DataFrame(dict(x=X[:, 0], y=X[:, 1], valor=G['vals'],
+                                tipo=['elegido' if i in G['elegidos'] else 'descartado' for i in range(len(X))]))
+        puntos = alt.Chart(dfp).mark_point(size=70, strokeWidth=2, clip=True).encode(
+            x='x:Q', y='y:Q',
+            color=alt.Color('tipo:N', scale=alt.Scale(domain=['elegido', 'descartado'], range=[AZUL, GRIS]),
+                            legend=alt.Legend(orient='bottom', title=None)),
+            fill=alt.Fill('tipo:N', scale=alt.Scale(domain=['elegido', 'descartado'], range=[AZUL, 'transparent']),
+                          legend=None),
+            tooltip=[alt.Tooltip('valor:Q', title='Valor', format='.3g')])
+        camino = pd.DataFrame([dict(x=x[0], y=x[1], o=i) for i, x in enumerate(d['media'] for d in gens[:g])])
+        rastro = alt.Chart(camino).mark_line(color=NARANJA, strokeWidth=1.5, opacity=0.6, clip=True).encode(
+            x='x:Q', y='y:Q', order='o:Q')
+        centro = alt.Chart(pd.DataFrame(dict(x=[m[0]], y=[m[1]]))).mark_point(
+            shape='diamond', size=140, filled=True, color=NARANJA, stroke='white', strokeWidth=1.5, clip=True
+        ).encode(x='x:Q', y='y:Q')
+        meta = FUNCIONES[nombre][2]
+        objetivo = alt.Chart(pd.DataFrame(dict(x=[meta[0]], y=[meta[1]]))).mark_point(
+            shape='cross', size=90, color=TINTA_2, filled=True).encode(x='x:Q', y='y:Q')
+        st.altair_chart((capa + objetivo + rastro + elipse + puntos + centro).properties(height=430),
+                        width='stretch')
+
+
+nube()
 
 st.markdown(
     """
@@ -222,11 +231,17 @@ with c1:
     st.markdown(
         r"""
 **Error**: cuánto se queda corta la energía encontrada respecto a la mejor conocida, en proporción:
-
-$$
-\text{error} = \operatorname{media}\;\max\!\left(\frac{E - E^\ast}{|E^\ast|},\, 0\right)
-$$
-
+"""
+    )
+    ecuacion(r'\text{error} = \operatorname{media}\;\max\!\left(\frac{E - E^\ast}{|E^\ast|},\, 0\right)',
+             [(r'E', 'energía que encontró A* con la configuración, en una secuencia.'),
+              (r'E^\ast', 'la mejor energía conocida para esa secuencia.'),
+              (r'\frac{E - E^\ast}{|E^\ast|}', 'cuánto se quedó corta, como fracción: 0.25 es que le faltó un 25 % '
+                                               'de los contactos.'),
+              (r'\max(\cdot,\, 0)', 'si llega a la mejor energía, el error es 0 (nunca negativo).'),
+              (r'\operatorname{media}', 'promedio sobre todas las secuencias del examen.')])
+    st.markdown(
+        r"""
 **Costo**: el trabajo, en órdenes de magnitud: $\operatorname{media}\,\log_{10}(\text{nodos} + 1)$.
 Si se agota el tope de 250 000 nodos, cuenta como error 1.
 """

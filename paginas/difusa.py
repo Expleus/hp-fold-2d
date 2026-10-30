@@ -9,8 +9,8 @@ from hp import dibujo
 from hp.difuso import (KYTE_DOOLITTLE, NOMBRES_AA, PEPTIDOS, a_hp, ajustar_rampa, brier_escalon, cota_paridad,
                        energias_todas, fraccion_h, grados_kd, presupuesto, rampa, tabla_r0, veredicto)
 from hp.motor import CONFIG_ACTUAL, grados_crisp
-from hp.ui import (AZUL, GRIS, GRIS_CLARO, NARANJA, TINTA_2, aviso, datos, encabezado, idea, limpiar, optimo,
-                   precalculado, resolver, siguiente, svg)
+from hp.ui import (AZUL, GRIS, GRIS_CLARO, NARANJA, TINTA_2, aviso, datos, ecuacion, encabezado, idea, limpiar,
+                   optimo, precalculado, resolver, siguiente, svg)
 
 encabezado('Lógica difusa: del sí/no al «cuánto»',
            'El modelo HP dice que cada aminoácido es H o P, y R0 dice que una secuencia pliega o no pliega. Las dos '
@@ -31,7 +31,11 @@ with pest1:
     st.markdown('La hidrofobicidad de un aminoácido es un número continuo. La escala de **Kyte y Doolittle** va de '
                 '−4.5 (arginina, la más afín al agua) a +4.5 (isoleucina, la que más la rehúye). Se reescala a un '
                 'grado $\\mu$:')
-    st.latex(r'\mu = \frac{\mathrm{KD} + 4.5}{9} \in [0, 1]')
+    ecuacion(r'\mu = \frac{\mathrm{KD} + 4.5}{9} \in [0, 1]',
+             [(r'\mu', 'grado de H de la bolita: 0 = nada hidrofóbica, 1 = todo lo hidrofóbica posible.'),
+              (r'\mathrm{KD}', 'valor del aminoácido en la escala de Kyte y Doolittle, entre −4.5 y +4.5.'),
+              (r'+4.5', 'corre la escala para que empiece en 0.'),
+              (r'/\,9', 'la encoge a un ancho de 1 (la escala mide 9 de punta a punta).')])
     st.markdown('El modelo HP clásico equivale a redondear: $\\mu \\ge 0.5 \\Rightarrow$ H, si no P. Es la forma más '
                 'brusca posible de tirar información.')
 
@@ -94,11 +98,18 @@ with pest1:
         ).properties(height=220, title=titulo)
 
     with c1:
-        st.latex(r'\varepsilon_{ij} = -\min(\mu_i, \mu_j)')
+        ecuacion(r'\varepsilon_{ij} = -\min(\mu_i, \mu_j)',
+                 [(r'\varepsilon_{ij}', 'energía del contacto entre las bolitas $i$ y $j$ (negativa: un contacto '
+                                        'siempre ayuda).'),
+                  (r'\mu_i,\ \mu_j', 'grados de H de las dos bolitas.'),
+                  (r'\min', 'el menor de los dos: manda la bolita más débil.')])
         st.altair_chart(mapa('mn', 'Mínimo: manda el más débil'), width='stretch')
         st.caption('El «Y» difuso clásico (Zadeh): el contacto es tan bueno como su bolita menos hidrofóbica.')
     with c2:
-        st.latex(r'\varepsilon_{ij} = -\mu_i\,\mu_j')
+        ecuacion(r'\varepsilon_{ij} = -\mu_i\,\mu_j',
+                 [(r'\varepsilon_{ij}', 'energía del contacto entre las bolitas $i$ y $j$.'),
+                  (r'\mu_i\,\mu_j', 'producto de los grados: solo es grande si **los dos** lo son '
+                                    '(0.5 × 0.5 = 0.25).')])
         st.altair_chart(mapa('pr', 'Producto: más exigente'), width='stretch')
         st.caption('Solo dos bolitas muy hidrofóbicas dan un contacto fuerte. Se parece a las matrices de contacto '
                    'de Miyazawa y Jernigan.')
@@ -149,8 +160,17 @@ contar bolitas H se **suman sus grados**: un contacto nunca vale más que el gra
 su bolita impar).
 """
     )
-    st.latex(r'|E| \;\le\; \min\Big(2\!\sum_{i\ \text{par}}\!\mu_i + \mu_{\text{extremos pares}},\;\; '
-             r'2\!\!\sum_{i\ \text{impar}}\!\!\mu_i + \mu_{\text{extremos impares}}\Big)')
+    ecuacion(r'|E| \;\le\; \min\Big(2\!\sum_{i\ \text{par}}\!\mu_i + \mu_{\text{extremos pares}},\;\; '
+             r'2\!\!\sum_{i\ \text{impar}}\!\!\mu_i + \mu_{\text{extremos impares}}\Big)',
+             [(r'|E|', 'la energía de la forma, sin el signo menos (la suma del valor de sus contactos).'),
+              (r'\textstyle\sum_{i\ \text{par}} \mu_i', 'suma de los grados de las bolitas en posiciones pares '
+                                                        '(0, 2, 4…).'),
+              (r'\textstyle\sum_{i\ \text{impar}} \mu_i', 'lo mismo con las impares (1, 3, 5…).'),
+              (r'2', 'cada bolita tiene como mucho 2 huecos libres para contactos.'),
+              (r'\mu_{\text{extremos pares}}', 'grados de los extremos de la cadena que caen en posición par: '
+                                               'tienen un hueco extra.'),
+              (r'\min', 'todo contacto une una par con una impar, así que manda el lado que suma menos.')],
+             nota='Es un techo. El razonamiento completo está en el desplegable de abajo.')
     with st.expander('El razonamiento paso a paso'):
         st.markdown(
             r"""
@@ -277,7 +297,14 @@ with pest2:
     with der:
         st.markdown(f'**Rampa ajustada a los datos:** grado 0 por debajo de **{a:.0%}** de H, grado 1 por encima de '
                     f'**{b:.0%}**, y lineal en medio.')
-        st.latex(r'\mu_\text{plegable}(f) = \min\!\Big(1,\ \max\!\Big(0,\ \frac{f - a}{b - a}\Big)\Big)')
+        ecuacion(r'\mu_\text{plegable}(f) = \begin{cases} 0 & f \le a \\ \dfrac{f - a}{b - a} & a < f < b \\ 1 & f \ge b'
+                 r'\end{cases}',
+                 [(r'\mu_\text{plegable}', 'grado de «plegable» de la secuencia, entre 0 y 1.'),
+                  (r'f', r'fracción de H de la secuencia (con grados, el promedio de $\mu$).'),
+                  (r'a', f'fracción por debajo de la cual el grado es 0 (aquí, {a:.0%}).'),
+                  (r'b', f'fracción por encima de la cual el grado es 1 (aquí, {b:.0%}).'),
+                  (r'\frac{f - a}{b - a}',
+                   'dónde cae $f$ entre $a$ y $b$: sube en línea recta de 0 (en $a$) a 1 (en $b$).')])
         m1, m2 = st.columns(2)
         m1.metric('Error de la rampa', f'{brier:.4f}')
         m2.metric('Error del escalón', f'{brier_e:.4f}')
@@ -289,7 +316,13 @@ with pest2:
                 'el buscador tiene todo el presupuesto de nodos; con grado bajo, un presupuesto reducido y una '
                 'advertencia de que la forma devuelta probablemente no importe. Como el esfuerzo de A* crece de forma '
                 'exponencial, el presupuesto también se reparte así:')
-    st.latex(r'\text{nodos} = N_\text{mín}\,\Big(\frac{N_\text{máx}}{N_\text{mín}}\Big)^{\mu_\text{plegable}}')
+    ecuacion(r'\text{nodos} = N_\text{mín}\,\Big(\frac{N_\text{máx}}{N_\text{mín}}\Big)^{\mu_\text{plegable}}',
+             [(r'\text{nodos}', 'presupuesto: cuántas cadenas puede expandir A* como máximo.'),
+              (r'N_\text{mín}', 'presupuesto con grado 0.'),
+              (r'N_\text{máx}', 'presupuesto completo, con grado 1.'),
+              (r'\mu_\text{plegable}', 'grado de «plegable» de la secuencia.')],
+             nota='El grado va en el exponente: cada décima de grado multiplica el presupuesto por el mismo factor. '
+                  'Así, grado 0.5 da la media geométrica entre $N_\\text{mín}$ y $N_\\text{máx}$, no la aritmética.')
     izq, der = st.columns([3, 2], gap='large')
     with der:
         entrada = st.text_input('Prueba una secuencia (H/P o aminoácidos)', 'HPPPPHPPPPPPHP', key='df_r0_sec')
