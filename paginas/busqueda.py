@@ -4,7 +4,7 @@ import streamlit as st
 
 from hp import dibujo
 from hp.motor import MOTIVOS, reconstruir_coordenadas
-from hp.ui import (AZUL, GRIS, NARANJA, avanzar, boton_reproducir, encabezado, ficha, fragmento, idea, optimo, quieto,
+from hp.ui import (AZUL, GRIS, NARANJA, avanzar, controles, encabezado, ficha, fragmento, idea, optimo, quieto,
                    resolver_con_traza, secuencia_hp, siguiente, svg)
 
 encabezado('Cómo busca A*',
@@ -52,26 +52,11 @@ if not completo:
     st.caption(f'Esta secuencia necesita más de {T} pasos: el reproductor muestra solo los primeros {T}.')
 
 
-def mover(d):
-    st.session_state.as_paso = min(max(1, st.session_state.as_paso + d), T)
-    quieto('as_paso')
-
-
-def ir(v):
-    st.session_state.as_paso = v
-    quieto('as_paso')
-
-
 @fragmento('as_paso', segundos=0.8)
 def reproductor():
     avanzar('as_paso', T)
     st.slider('Paso', 1, T, key='as_paso', label_visibility='collapsed', on_change=quieto, args=('as_paso',))
-    b = st.columns(5)
-    b[0].button('Inicio', icon=':material/first_page:', on_click=ir, args=(1,), width='stretch')
-    b[1].button('Atrás', icon=':material/chevron_left:', on_click=mover, args=(-1,), width='stretch')
-    boton_reproducir('as_paso', T, b[2], width='stretch')
-    b[3].button('Adelante', icon=':material/chevron_right:', on_click=mover, args=(1,), width='stretch')
-    b[4].button('Final', icon=':material/last_page:', on_click=ir, args=(T,), width='stretch')
+    controles('as_paso', T)
 
     paso = st.session_state.as_paso
     rec = traza[paso - 1]

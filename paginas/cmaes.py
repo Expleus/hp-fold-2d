@@ -7,7 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from hp.motor import CONFIG_ACTUAL, LIMITES, NOMBRES, ConfigHP, a_estrella
-from hp.ui import (AQUA, AZUL, GRIS, NARANJA, TINTA_2, avanzar, boton_reproducir, datos, ecuacion, encabezado,
+from hp.ui import (AQUA, AZUL, GRIS, NARANJA, TINTA_2, avanzar, controles, datos, ecuacion, encabezado,
                    fragmento, idea, presets, quieto, siguiente)
 
 encabezado('Ajuste automático con CMA-ES',
@@ -133,8 +133,9 @@ LAM, MU_, GENS = 8, 4, 40
 @st.cache_data(show_spinner=False)
 def demo(nombre):
     f, x0, _ = FUNCIONES[nombre]
-    es = cma.CMAEvolutionStrategy(list(x0), 0.8, {'popsize': LAM, 'CMA_mu': MU_, 'seed': 7, 'verbose': -9,
-                                                  'bounds': [[-4, -4], [4, 4]]})
+    # Sin 'bounds': con límites, cma guarda la media y la covarianza en un espacio interno distinto del de los
+    # puntos, y la elipse dibujada dejaría de ser la nube de la que salen.
+    es = cma.CMAEvolutionStrategy(list(x0), 0.8, {'popsize': LAM, 'CMA_mu': MU_, 'seed': 7, 'verbose': -9})
     gens = []
     for _ in range(GENS):
         media, sigma, C = es.mean.copy(), float(es.sigma), np.array(es.C, dtype=float)
@@ -165,7 +166,7 @@ def nube():
         nombre = st.segmented_control('Problema', list(FUNCIONES), default='Valle inclinado', key='cm_fun')
         nombre = nombre or 'Valle inclinado'
         g = st.slider('Generación', 1, GENS, key='cm_gen', on_change=quieto, args=('cm_gen',))
-        boton_reproducir('cm_gen', GENS)
+        controles('cm_gen', GENS, compacto=True)
         gens = demo(nombre)
         G = gens[g - 1]
         st.markdown(
