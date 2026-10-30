@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>HP-Fold 2D · plegamiento de proteínas con A*</title>
+  <meta name="description" content="App didáctica: modelo HP de plegamiento en red cuadrada, búsqueda A*, reglas de poda, CMA-ES, un adversario y lógica difusa.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧬</text></svg>">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@stlite/browser@1.12.0/build/stlite.css">
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import { mount } from "https://cdn.jsdelivr.net/npm/@stlite/browser@1.12.0/build/stlite.js";
+    mount({
+  "entrypoint": "app.py",
+  "requirements": [
+    "cma"
+  ],
+  "streamlitConfig": {
+    "theme.base": "light",
+    "theme.primaryColor": "#2a78d6",
+    "theme.backgroundColor": "#ffffff",
+    "theme.secondaryBackgroundColor": "#f5f4f0",
+    "theme.textColor": "#1d1c1a",
+    "client.toolbarMode": "viewer",
+    "browser.gatherUsageStats": false
+  },
+  "files": {
+    "app.py": {
+      "url": "./app.py"
+    },
+    "datos/banco.json": {
+      "url": "./datos/banco.json"
+    },
+    "datos/cmaes.json": {
+      "url": "./datos/cmaes.json"
+    },
+    "datos/hedge.json": {
+      "url": "./datos/hedge.json"
+    },
+    "datos/peptidos.json": {
+      "url": "./datos/peptidos.json"
+    },
+    "datos/pesos_w.json": {
+      "url": "./datos/pesos_w.json"
+    },
+    "datos/r0.json": {
+      "url": "./datos/r0.json"
+    },
+    "hp/__init__.py": {
+      "url": "./hp/__init__.py"
+    },
+    "hp/dibujo.py": {
+      "url": "./hp/dibujo.py"
+    },
+    "hp/difuso.py": {
+      "url": "./hp/difuso.py"
+    },
+    "hp/motor.py": {
+      "url": "./hp/motor.py"
+    },
+    "hp/ui.py": {
+      "url": "./hp/ui.py"
+    },
+    "paginas/adversario.py": {
+      "url": "./paginas/adversario.py"
+    },
+    "paginas/busqueda.py": {
+      "url": "./paginas/busqueda.py"
+    },
+    "paginas/cmaes.py": {
+      "url": "./paginas/cmaes.py"
+    },
+    "paginas/difusa.py": {
+      "url": "./paginas/difusa.py"
+    },
+    "paginas/heuristica.py": {
+      "url": "./paginas/heuristica.py"
+    },
+    "paginas/historia.py": {
+      "url": "./paginas/historia.py"
+    },
+    "paginas/inicio.py": {
+      "url": "./paginas/inicio.py"
+    },
+    "paginas/laboratorio.py": {
+      "url": "./paginas/laboratorio.py"
+    },
+    "paginas/problema.py": {
+      "url": "./paginas/problema.py"
+    },
+    "paginas/reglas.py": {
+      "url": "./paginas/reglas.py"
+    }
+  }
+}, document.getElementById("root"));
+  </script>
+</body>
+</html>

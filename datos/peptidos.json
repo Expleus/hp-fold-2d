@@ -1,0 +1,50 @@
+{
+ "GYDPETGTWG|min|1": {
+  "movs": "LLFLFFLL",
+  "energia": -1.6560000000000001,
+  "nodos": 361,
+  "estado": "ok"
+ },
+ "GYDPETGTWG|min|2": {
+  "movs": "FLFLFLRL",
+  "energia": -0.878,
+  "nodos": 494,
+  "estado": "ok"
+ },
+ "GYDPETGTWG|prod|1": {
+  "movs": "LLFLFFLL",
+  "energia": -0.755136,
+  "nodos": 905,
+  "estado": "ok"
+ },
+ "GYDPETGTWG|prod|2": {
+  "movs": "FLFLFLRL",
+  "energia": -0.400368,
+  "nodos": 494,
+  "estado": "ok"
+ },
+ "NLYIQWLKDGGPSSGRPPPS|min|1": {
+  "movs": "FLFLLRRFRFLLFFRRFF",
+  "energia": -4.455,
+  "nodos": 140731,
+  "estado": "ok"
+ },
+ "NLYIQWLKDGGPSSGRPPPS|min|2": {
+  "movs": "FLFLLRFLFLFFRFRFRL",
+  "energia": -3.6330000000000005,
+  "nodos": 113545,
+  "estado": "ok"
+ },
+ "NLYIQWLKDGGPSSGRPPPS|prod|1": {
+  "movs": "LRLRRLRRFLRFLFLFLL",
+  "energia": -3.2357899999999997,
+  "nodos": 657796,
+  "estado": "ok"
+ },
+ "NLYIQWLKDGGPSSGRPPPS|prod|2": {
+  "movs": "FLFLLRFLFLFFFLFFFL",
+  "energia": -2.7945,
+  "nodos": 275531,
+  "estado": "ok"
+ }
+}
