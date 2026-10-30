@@ -121,25 +121,22 @@ base = alt.Chart(df).encode(
              alt.Tooltip('texto:N', title='Formas')])
 grafica = base.mark_line(strokeWidth=2) + base.mark_point(size=40, filled=True, opacity=0.9)
 
-izq, der = st.columns([3, 2], gap='large')
-with izq:
-    st.altair_chart(grafica.properties(height=320), width='stretch')
-with der:
-    k = st.slider('Longitud de la cadena', 10, 31, 30)
-    formas = conformaciones_posibles(k)
-    seg = formas / 1e6
+st.altair_chart(grafica.properties(height=320), width='stretch')
+k = st.slider('Longitud de la cadena', 10, 31, 30)
+formas = conformaciones_posibles(k)
+seg = formas / 1e6
 
-    def duracion(s):
-        for lim, div, nombre in ((60, 1, 'segundos'), (3600, 60, 'minutos'), (86400, 3600, 'horas'),
-                                 (86400 * 365, 86400, 'días')):
-            if s < lim:
-                return f'{s / div:.1f} {nombre}'.replace('.', ',')
-        return f'{s / (86400 * 365):.1f} años'.replace('.', ',')
+def duracion(s):
+    for lim, div, nombre in ((60, 1, 'segundos'), (3600, 60, 'minutos'), (86400, 3600, 'horas'),
+                             (86400 * 365, 86400, 'días')):
+        if s < lim:
+            return f'{s / div:.1f} {nombre}'.replace('.', ',')
+    return f'{s / (86400 * 365):.1f} años'.replace('.', ',')
 
-    st.metric('Formas sin choques', formato_grande(formas))
-    st.metric('Revisando un millón por segundo', duracion(seg))
-    st.caption('Las proteínas reales tienen cientos de aminoácidos y viven en 3D: probarlo todo es imposible. '
-               'Hace falta buscar con inteligencia.')
+st.metric('Formas sin choques', formato_grande(formas))
+st.metric('Revisando un millón por segundo', duracion(seg))
+st.caption('Las proteínas reales tienen cientos de aminoácidos y viven en 3D: probarlo todo es imposible. '
+           'Hace falta buscar con inteligencia.')
 
 with st.expander('De dónde salen estos números'):
     st.markdown(

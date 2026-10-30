@@ -85,7 +85,6 @@ with pest1:
     st.markdown('### ¿Cuánto vale un contacto entre grados?')
     st.markdown('Si dos bolitas vecinas tienen grados $\\mu_i$ y $\\mu_j$, el contacto ya no vale exactamente −1. '
                 'Hay dos reglas naturales, y las dos devuelven el modelo clásico cuando los grados son 0 o 1:')
-    c1, c2 = st.columns(2, gap='large')
     rejilla = pd.DataFrame([dict(a=a, b=b, a2=a + 0.1, b2=b + 0.1, mn=min(a + .05, b + .05),
                                  pr=(a + .05) * (b + .05)) for a in np.arange(0, 1, 0.1) for b in np.arange(0, 1, 0.1)])
 
@@ -97,22 +96,20 @@ with pest1:
             tooltip=[alt.Tooltip(f'{campo}:Q', title='|energía|', format='.2f')]
         ).properties(height=220, title=titulo)
 
-    with c1:
-        ecuacion(r'\varepsilon_{ij} = -\min(\mu_i, \mu_j)',
-                 [(r'\varepsilon_{ij}', 'energía del contacto entre las bolitas $i$ y $j$ (negativa: un contacto '
-                                        'siempre ayuda).'),
-                  (r'\mu_i,\ \mu_j', 'grados de H de las dos bolitas.'),
-                  (r'\min', 'el menor de los dos: manda la bolita más débil.')])
-        st.altair_chart(mapa('mn', 'Mínimo: manda el más débil'), width='stretch')
-        st.caption('El «Y» difuso clásico (Zadeh): el contacto es tan bueno como su bolita menos hidrofóbica.')
-    with c2:
-        ecuacion(r'\varepsilon_{ij} = -\mu_i\,\mu_j',
-                 [(r'\varepsilon_{ij}', 'energía del contacto entre las bolitas $i$ y $j$.'),
-                  (r'\mu_i\,\mu_j', 'producto de los grados: solo es grande si **los dos** lo son '
-                                    '(0.5 × 0.5 = 0.25).')])
-        st.altair_chart(mapa('pr', 'Producto: más exigente'), width='stretch')
-        st.caption('Solo dos bolitas muy hidrofóbicas dan un contacto fuerte. Se parece a las matrices de contacto '
-                   'de Miyazawa y Jernigan.')
+    ecuacion(r'\varepsilon_{ij} = -\min(\mu_i, \mu_j)',
+             [(r'\varepsilon_{ij}', 'energía del contacto entre las bolitas $i$ y $j$ (negativa: un contacto '
+                                    'siempre ayuda).'),
+              (r'\mu_i,\ \mu_j', 'grados de H de las dos bolitas.'),
+              (r'\min', 'el menor de los dos: manda la bolita más débil.')])
+    st.altair_chart(mapa('mn', 'Mínimo: manda el más débil'), width='stretch')
+    st.caption('El «Y» difuso clásico (Zadeh): el contacto es tan bueno como su bolita menos hidrofóbica.')
+    ecuacion(r'\varepsilon_{ij} = -\mu_i\,\mu_j',
+             [(r'\varepsilon_{ij}', 'energía del contacto entre las bolitas $i$ y $j$.'),
+              (r'\mu_i\,\mu_j', 'producto de los grados: solo es grande si **los dos** lo son '
+                                '(0.5 × 0.5 = 0.25).')])
+    st.altair_chart(mapa('pr', 'Producto: más exigente'), width='stretch')
+    st.caption('Solo dos bolitas muy hidrofóbicas dan un contacto fuerte. Se parece a las matrices de contacto '
+               'de Miyazawa y Jernigan.')
     regla = st.segmented_control('Regla de contacto', ['min', 'producto'], default='min', key='df_regla') or 'min'
     regla = 'min' if regla == 'min' else 'prod'
 
@@ -129,21 +126,19 @@ with pest1:
         Ed, Ec = paisaje(tuple(mu), hp, regla)
         # Mismo eje para los dos: barras de ancho 1 (energías enteras) frente a barras finas (grados).
         lo = np.floor(min(min(Ec), min(Ed))) - 0.5
-        for col, titulo, E, paso in zip(st.columns(2, gap='large'), ('Clásico (H/P)', 'Con grados'), (Ec, Ed),
-                                        (1.0, 0.05)):
-            with col:
-                st.markdown(f'**{titulo}**')
-                hist = alt.Chart(pd.DataFrame(dict(E=E))).mark_bar(
-                    color=AZUL, cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
-                    x=alt.X('E:Q', bin=alt.Bin(step=paso, extent=[lo, 0.5]), title='Energía',
-                            scale=alt.Scale(domain=[lo, 0.5], nice=False)),
-                    y=alt.Y('count():Q', title='Formas (escala log)', scale=alt.Scale(type='symlog')),
-                    tooltip=[alt.Tooltip('count():Q', title='formas')])
-                st.altair_chart(hist.properties(height=180), width='stretch')
-                mejor = min(E)
-                m1, m2 = st.columns(2)
-                m1.metric('Empatadas en la mejor', f'{sum(abs(e - mejor) < 1e-9 for e in E):,}'.replace(',', '\u2009'))
-                m2.metric('Energías distintas', len({round(e, 6) for e in E}))
+        for titulo, E, paso in zip(('Clásico (H/P)', 'Con grados'), (Ec, Ed), (1.0, 0.05)):
+            st.markdown(f'**{titulo}**')
+            hist = alt.Chart(pd.DataFrame(dict(E=E))).mark_bar(
+                color=AZUL, cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
+                x=alt.X('E:Q', bin=alt.Bin(step=paso, extent=[lo, 0.5]), title='Energía',
+                        scale=alt.Scale(domain=[lo, 0.5], nice=False)),
+                y=alt.Y('count():Q', title='Formas (escala log)', scale=alt.Scale(type='symlog')),
+                tooltip=[alt.Tooltip('count():Q', title='formas')])
+            st.altair_chart(hist.properties(height=180), width='stretch')
+            mejor = min(E)
+            m1, m2 = st.columns(2)
+            m1.metric('Empatadas en la mejor', f'{sum(abs(e - mejor) < 1e-9 for e in E):,}'.replace(',', '\u2009'))
+            m2.metric('Energías distintas', len({round(e, 6) for e in E}))
         st.markdown(f'Las {len(Ed):,} formas posibles de la cadena, agrupadas por energía. En el modelo clásico la '
                     'energía solo toma valores enteros y muchísimas formas empatan: son **mesetas** donde un buscador '
                     'no sabe hacia dónde ir. Con grados casi no hay empates.'.replace(',', ' '))
@@ -203,15 +198,12 @@ porque el «+2» solo hace falta si los extremos son H y tienen la paridad que m
         color=alt.Color('tipo:N', scale=alt.Scale(domain=['cota', 'real'], range=[GRIS_CLARO, AZUL]), legend=None),
         tooltip=['cota', alt.Tooltip('valor:Q', format='.3f')])
     textos = barras.mark_text(align='left', dx=5, color=TINTA_2).encode(text=alt.Text('valor:Q', format='.2f'))
-    izq, der = st.columns([3, 2], gap='large')
-    with izq:
-        st.altair_chart((barras + textos).properties(height=40 * len(filas) + 30), width='stretch')
-    with der:
-        if n_opt:
-            st.markdown(f'Para este péptido, el mejor plegamiento suma **{e_real:.2f}**: las dos cotas lo respetan '
-                        f'(nunca prometen menos de lo posible), y la rederivada se queda más cerca.')
-        else:
-            st.markdown('El óptimo exacto se calcula probando todas las formas, solo hasta 14 aminoácidos.')
+    st.altair_chart((barras + textos).properties(height=40 * len(filas) + 30), width='stretch')
+    if n_opt:
+        st.markdown(f'Para este péptido, el mejor plegamiento suma **{e_real:.2f}**: las dos cotas lo respetan '
+                    f'(nunca prometen menos de lo posible), y la rederivada se queda más cerca.')
+    else:
+        st.markdown('El óptimo exacto se calcula probando todas las formas, solo hasta 14 aminoácidos.')
 
     # ---------------------------------------------------------------- A* difuso
     st.markdown('### A* con grados')
@@ -276,40 +268,37 @@ with pest2:
     xs = np.linspace(0, 1, 201)
     curvas = pd.DataFrame([dict(f=x, grado=float(rampa(x, a, b)), forma='Rampa ajustada') for x in xs] +
                           [dict(f=x, grado=float(x >= 0.3), forma='R0 clásica (escalón)') for x in xs])
-    izq, der = st.columns([3, 2], gap='large')
-    with izq:
-        lineas = alt.Chart(curvas).mark_line(strokeWidth=2.5, interpolate='linear').encode(
-            x=alt.X('f:Q', title='Fracción de H', axis=alt.Axis(format='%')),
-            y=alt.Y('grado:Q', title='Proporción que pliega / grado', axis=alt.Axis(format='%')),
-            color=alt.Color('forma:N', title=None, legend=alt.Legend(orient='top'),
-                            scale=alt.Scale(domain=['Rampa ajustada', 'R0 clásica (escalón)'], range=[NARANJA, GRIS])),
-            strokeDash=alt.StrokeDash('forma:N', legend=None,
-                                      scale=alt.Scale(domain=['Rampa ajustada', 'R0 clásica (escalón)'],
-                                                      range=[[1, 0], [5, 4]])))
-        puntos = alt.Chart(dfp).mark_circle(color=AZUL, opacity=0.85, stroke='white', strokeWidth=1).encode(
-            x='f:Q', y='prop:Q', size=alt.Size('total:Q', title='Secuencias', scale=alt.Scale(range=[20, 400]),
-                                               legend=alt.Legend(orient='top')),
-            tooltip=[alt.Tooltip('f:Q', title='fracción de H', format='.1%'), alt.Tooltip('total:Q', title='secuencias'),
-                     alt.Tooltip('prop:Q', title='pliegan', format='.1%')])
-        st.altair_chart((lineas + puntos).properties(height=320), width='stretch')
-        st.caption('Cada punto azul agrupa las secuencias con la misma fracción de H (más grande = más secuencias); '
-                   'su altura es la proporción que de verdad pliega.')
-    with der:
-        st.markdown(f'**Rampa ajustada a los datos:** grado 0 por debajo de **{a:.0%}** de H, grado 1 por encima de '
-                    f'**{b:.0%}**, y lineal en medio.')
-        ecuacion(r'\mu_\text{plegable}(f) = \begin{cases} 0 & f \le a \\ \dfrac{f - a}{b - a} & a < f < b \\ 1 & f \ge b'
-                 r'\end{cases}',
-                 [(r'\mu_\text{plegable}', 'grado de «plegable» de la secuencia, entre 0 y 1.'),
-                  (r'f', r'fracción de H de la secuencia (con grados, el promedio de $\mu$).'),
-                  (r'a', f'fracción por debajo de la cual el grado es 0 (aquí, {a:.0%}).'),
-                  (r'b', f'fracción por encima de la cual el grado es 1 (aquí, {b:.0%}).'),
-                  (r'\frac{f - a}{b - a}',
-                   'dónde cae $f$ entre $a$ y $b$: sube en línea recta de 0 (en $a$) a 1 (en $b$).')])
-        m1, m2 = st.columns(2)
-        m1.metric('Error de la rampa', f'{brier:.4f}')
-        m2.metric('Error del escalón', f'{brier_e:.4f}')
-        st.caption('Error cuadrático medio por secuencia (puntaje de Brier) frente a lo que de verdad pliega. La '
-                   'rampa no se elige a ojo: es la que mejor encaja con los óptimos exactos.')
+    lineas = alt.Chart(curvas).mark_line(strokeWidth=2.5, interpolate='linear').encode(
+        x=alt.X('f:Q', title='Fracción de H', axis=alt.Axis(format='%')),
+        y=alt.Y('grado:Q', title='Proporción que pliega / grado', axis=alt.Axis(format='%')),
+        color=alt.Color('forma:N', title=None, legend=alt.Legend(orient='top'),
+                        scale=alt.Scale(domain=['Rampa ajustada', 'R0 clásica (escalón)'], range=[NARANJA, GRIS])),
+        strokeDash=alt.StrokeDash('forma:N', legend=None,
+                                  scale=alt.Scale(domain=['Rampa ajustada', 'R0 clásica (escalón)'],
+                                                  range=[[1, 0], [5, 4]])))
+    puntos = alt.Chart(dfp).mark_circle(color=AZUL, opacity=0.85, stroke='white', strokeWidth=1).encode(
+        x='f:Q', y='prop:Q', size=alt.Size('total:Q', title='Secuencias', scale=alt.Scale(range=[20, 400]),
+                                           legend=alt.Legend(orient='top')),
+        tooltip=[alt.Tooltip('f:Q', title='fracción de H', format='.1%'), alt.Tooltip('total:Q', title='secuencias'),
+                 alt.Tooltip('prop:Q', title='pliegan', format='.1%')])
+    st.altair_chart((lineas + puntos).properties(height=320), width='stretch')
+    st.caption('Cada punto azul agrupa las secuencias con la misma fracción de H (más grande = más secuencias); '
+               'su altura es la proporción que de verdad pliega.')
+    st.markdown(f'**Rampa ajustada a los datos:** grado 0 por debajo de **{a:.0%}** de H, grado 1 por encima de '
+                f'**{b:.0%}**, y lineal en medio.')
+    ecuacion(r'\mu_\text{plegable}(f) = \begin{cases} 0 & f \le a \\ \dfrac{f - a}{b - a} & a < f < b \\ 1 & f \ge b'
+             r'\end{cases}',
+             [(r'\mu_\text{plegable}', 'grado de «plegable» de la secuencia, entre 0 y 1.'),
+              (r'f', r'fracción de H de la secuencia (con grados, el promedio de $\mu$).'),
+              (r'a', f'fracción por debajo de la cual el grado es 0 (aquí, {a:.0%}).'),
+              (r'b', f'fracción por encima de la cual el grado es 1 (aquí, {b:.0%}).'),
+              (r'\frac{f - a}{b - a}',
+               'dónde cae $f$ entre $a$ y $b$: sube en línea recta de 0 (en $a$) a 1 (en $b$).')])
+    m1, m2 = st.columns(2)
+    m1.metric('Error de la rampa', f'{brier:.4f}')
+    m2.metric('Error del escalón', f'{brier_e:.4f}')
+    st.caption('Error cuadrático medio por secuencia (puntaje de Brier) frente a lo que de verdad pliega. La '
+               'rampa no se elige a ojo: es la que mejor encaja con los óptimos exactos.')
 
     st.markdown('### Lo importante: no abortar, sino dosificar')
     st.markdown('La R0 difusa **nunca aborta**. El grado decide **cuánto esfuerzo** merece la secuencia: con grado 1 '
@@ -323,38 +312,35 @@ with pest2:
               (r'\mu_\text{plegable}', 'grado de «plegable» de la secuencia.')],
              nota='El grado va en el exponente: cada décima de grado multiplica el presupuesto por el mismo factor. '
                   'Así, grado 0.5 da la media geométrica entre $N_\\text{mín}$ y $N_\\text{máx}$, no la aritmética.')
-    izq, der = st.columns([3, 2], gap='large')
-    with der:
-        entrada = st.text_input('Prueba una secuencia (H/P o aminoácidos)', 'HPPPPHPPPPPPHP', key='df_r0_sec')
-        s = limpiar(entrada)
-        if s and not set(s) - {'H', 'P'}:
-            mu_s, tipo = grados_crisp(s), 'HP'
-        elif s and not set(s) - set(KYTE_DOOLITTLE):
-            mu_s, tipo = grados_kd(s), 'aminoácidos'
-        else:
-            st.error('Escribe una secuencia de H y P, o de aminoácidos. Mientras, se usa HPPPPHPPPPPPHP.')
-            mu_s, tipo = grados_crisp('HPPPPHPPPPPPHP'), 'HP'
-        f = fraccion_h(mu_s)
-        grado = float(rampa(f, a, b))
-        nombre, texto = veredicto(grado)
-        st.metric('Fracción de H' + (' (suma de grados ÷ n)' if tipo == 'aminoácidos' else ''), f'{f:.1%}')
-        m1, m2 = st.columns(2)
-        m1.metric('Grado de «plegable»', f'{grado:.2f}')
-        m2.metric('Presupuesto', f'{presupuesto(grado, *PRESUPUESTO):,} nodos'.replace(',', ' '))
-        (st.success if grado >= 0.8 else st.info if grado >= 0.3 else st.warning)(f'**{nombre.capitalize()}.** {texto}')
-        st.caption('R0 clásica: ' + ('la acepta.' if f >= 0.3 else '**la descarta sin buscar.**'))
-    with izq:
-        gs = np.linspace(0, 1, 101)
-        dfb = pd.DataFrame(dict(grado=gs, nodos=[presupuesto(g, *PRESUPUESTO) for g in gs]))
-        curva = alt.Chart(dfb).mark_line(color=AZUL, strokeWidth=2).encode(
-            x=alt.X('grado:Q', title='Grado de «plegable»'),
-            y=alt.Y('nodos:Q', title='Presupuesto de nodos (escala log)', scale=alt.Scale(type='log'),
-                    axis=alt.Axis(format='~s')),
-            tooltip=[alt.Tooltip('grado:Q', format='.2f'), alt.Tooltip('nodos:Q', format=',')])
-        punto = alt.Chart(pd.DataFrame(dict(grado=[grado], nodos=[presupuesto(grado, *PRESUPUESTO)]))).mark_point(
-            filled=True, size=120, color=NARANJA, stroke='white', strokeWidth=1.5).encode(x='grado:Q', y='nodos:Q')
-        st.altair_chart((curva + punto).properties(height=280), width='stretch')
-        st.caption(f'Entre {PRESUPUESTO[0]:,} y {PRESUPUESTO[1]:,} nodos. El punto naranja es la secuencia de la '
-                   f'derecha.'.replace(',', ' '))
+    entrada = st.text_input('Prueba una secuencia (H/P o aminoácidos)', 'HPPPPHPPPPPPHP', key='df_r0_sec')
+    s = limpiar(entrada)
+    if s and not set(s) - {'H', 'P'}:
+        mu_s, tipo = grados_crisp(s), 'HP'
+    elif s and not set(s) - set(KYTE_DOOLITTLE):
+        mu_s, tipo = grados_kd(s), 'aminoácidos'
+    else:
+        st.error('Escribe una secuencia de H y P, o de aminoácidos. Mientras, se usa HPPPPHPPPPPPHP.')
+        mu_s, tipo = grados_crisp('HPPPPHPPPPPPHP'), 'HP'
+    f = fraccion_h(mu_s)
+    grado = float(rampa(f, a, b))
+    nombre, texto = veredicto(grado)
+    gs = np.linspace(0, 1, 101)
+    dfb = pd.DataFrame(dict(grado=gs, nodos=[presupuesto(g, *PRESUPUESTO) for g in gs]))
+    curva = alt.Chart(dfb).mark_line(color=AZUL, strokeWidth=2).encode(
+        x=alt.X('grado:Q', title='Grado de «plegable»'),
+        y=alt.Y('nodos:Q', title='Presupuesto de nodos (escala log)', scale=alt.Scale(type='log'),
+                axis=alt.Axis(format='~s')),
+        tooltip=[alt.Tooltip('grado:Q', format='.2f'), alt.Tooltip('nodos:Q', format=',')])
+    punto = alt.Chart(pd.DataFrame(dict(grado=[grado], nodos=[presupuesto(grado, *PRESUPUESTO)]))).mark_point(
+        filled=True, size=120, color=NARANJA, stroke='white', strokeWidth=1.5).encode(x='grado:Q', y='nodos:Q')
+    st.altair_chart((curva + punto).properties(height=280), width='stretch')
+    st.caption(f'Entre {PRESUPUESTO[0]:,} y {PRESUPUESTO[1]:,} nodos. El punto naranja es la secuencia de '
+               f'arriba.'.replace(',', ' '))
+    m0, m1, m2 = st.columns(3)
+    m0.metric('Fracción de H' + (' (suma de grados ÷ n)' if tipo == 'aminoácidos' else ''), f'{f:.1%}')
+    m1.metric('Grado de «plegable»', f'{grado:.2f}')
+    m2.metric('Presupuesto', f'{presupuesto(grado, *PRESUPUESTO):,} nodos'.replace(',', ' '))
+    (st.success if grado >= 0.8 else st.info if grado >= 0.3 else st.warning)(f'**{nombre.capitalize()}.** {texto}')
+    st.caption('R0 clásica: ' + ('la acepta.' if f >= 0.3 else '**la descarta sin buscar.**'))
 
 navegacion('paginas/difusa.py')

@@ -51,14 +51,14 @@ pueden formar un cuadrado con **4 contactos**.
     with izq:
         svg(dibujo.conformacion(EJ, r.movs, celda=40, ancho_max=320,
                                 titulo=f'{EJ.count("H")} H de {len(EJ)} · energía {r.energia:g}'))
-        fr = pd.DataFrame(dict(f=[0, 0.3, 0.3, 0.6], v=[0, 0, 1, 1]))
-        escalon = alt.Chart(fr).mark_line(color=AZUL, strokeWidth=2).encode(
-            x=alt.X('f:Q', title='Fracción de H', scale=alt.Scale(domain=[0, 0.6])),
-            y=alt.Y('v:Q', title='¿Se busca?', axis=alt.Axis(values=[0, 1], labelExpr="datum.value ? 'sí' : 'no'")))
-        punto = alt.Chart(pd.DataFrame(dict(f=[EJ.count('H') / len(EJ)], v=[0]))).mark_point(
-            color=NARANJA, filled=True, size=90).encode(x='f:Q', y='v:Q')
-        st.altair_chart((escalon + punto).properties(height=150), width='stretch')
-        st.caption('El punto naranja es la secuencia de arriba: queda justo del lado del «no».')
+    fr = pd.DataFrame(dict(f=[0, 0.3, 0.3, 0.6], v=[0, 0, 1, 1]))
+    escalon = alt.Chart(fr).mark_line(color=AZUL, strokeWidth=2).encode(
+        x=alt.X('f:Q', title='Fracción de H', scale=alt.Scale(domain=[0, 0.6])),
+        y=alt.Y('v:Q', title='¿Se busca?', axis=alt.Axis(values=[0, 1], labelExpr="datum.value ? 'sí' : 'no'")))
+    punto = alt.Chart(pd.DataFrame(dict(f=[EJ.count('H') / len(EJ)], v=[0]))).mark_point(
+        color=NARANJA, filled=True, size=90).encode(x='f:Q', y='v:Q')
+    st.altair_chart((escalon + punto).properties(height=150), width='stretch')
+    st.caption('El punto naranja es la secuencia del dibujo: queda justo del lado del «no».')
 
 # ---------------------------------------------------------------- R1
 with t1:
@@ -198,21 +198,18 @@ def comparar(sec):
 
 
 conteo, todas, sin_r3, sin_r4 = comparar(sec)
-izq, der = st.columns([1, 1], gap='large')
-with izq:
-    df = pd.DataFrame([dict(regla=MOTIVOS[m], ramas=conteo.get(m, 0)) for m in ('simetria', 'colision', 'callejon',
-                                                                                 'esteril')])
-    barras = alt.Chart(df).mark_bar(color=AZUL, cornerRadiusEnd=4, height=22).encode(
-        x=alt.X('ramas:Q', title='Hijos descartados durante la búsqueda'),
-        y=alt.Y('regla:N', title=None, sort=None, axis=alt.Axis(labelLimit=240)), tooltip=['regla', 'ramas'])
-    etiquetas = barras.mark_text(align='left', dx=4, color='#52514e').encode(text='ramas:Q')
-    st.altair_chart((barras + etiquetas).properties(height=180), width='stretch')
-with der:
-    filas = [('Con todas las reglas', todas), ('Sin R3 (m3 = 0)', sin_r3), ('Sin R4 (r4 = 0)', sin_r4)]
-    st.dataframe(pd.DataFrame([{'Variante': k, 'Nodos expandidos': v.nodos, 'Energía': v.energia} for k, v in filas]),
-                 hide_index=True, width='stretch')
-    st.caption('Contar ramas descartadas no es lo mismo que medir el ahorro: una rama cortada arriba vale miles '
-               'cortadas abajo. Por eso R1 casi no aparece en las barras y aun así reduce la búsqueda a la mitad.')
+df = pd.DataFrame([dict(regla=MOTIVOS[m], ramas=conteo.get(m, 0)) for m in ('simetria', 'colision', 'callejon',
+                                                                             'esteril')])
+barras = alt.Chart(df).mark_bar(color=AZUL, cornerRadiusEnd=4, height=22).encode(
+    x=alt.X('ramas:Q', title='Hijos descartados durante la búsqueda'),
+    y=alt.Y('regla:N', title=None, sort=None, axis=alt.Axis(labelLimit=240)), tooltip=['regla', 'ramas'])
+etiquetas = barras.mark_text(align='left', dx=4, color='#52514e').encode(text='ramas:Q')
+st.altair_chart((barras + etiquetas).properties(height=180), width='stretch')
+filas = [('Con todas las reglas', todas), ('Sin R3 (m3 = 0)', sin_r3), ('Sin R4 (r4 = 0)', sin_r4)]
+st.dataframe(pd.DataFrame([{'Variante': k, 'Nodos expandidos': v.nodos, 'Energía': v.energia} for k, v in filas]),
+             hide_index=True, width='stretch')
+st.caption('Contar ramas descartadas no es lo mismo que medir el ahorro: una rama cortada arriba vale miles '
+           'cortadas abajo. Por eso R1 casi no aparece en las barras y aun así reduce la búsqueda a la mitad.')
 if sin_r4.energia < todas.energia:
     extra = ' y además expande <b>menos</b> nodos' if sin_r4.nodos < todas.nodos else ''
     aviso(f'En esta secuencia R4 se equivoca: sin ella el buscador encuentra una forma <b>mejor</b> '

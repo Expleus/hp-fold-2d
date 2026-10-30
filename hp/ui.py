@@ -120,12 +120,10 @@ def _alternar(clave, total):
     quieto(clave)
 
 
-def boton_reproducir(clave, total, donde=st, solo_icono=False, **kw):
+def boton_reproducir(clave, total, donde=st, **kw):
     activo = reproduciendo(clave)
-    texto = 'Pausa' if activo else 'Reproducir'
-    if donde.button('' if solo_icono else texto, icon=':material/pause:' if activo else ':material/play_arrow:',
-                    help=texto if solo_icono else None, key=f'{clave}_btn', type='primary', on_click=_alternar,
-                    args=(clave, total), **kw):
+    if donde.button('Pausa' if activo else 'Reproducir', icon=':material/pause:' if activo else ':material/play_arrow:',
+                    key=f'{clave}_btn', type='primary', on_click=_alternar, args=(clave, total), **kw):
         st.rerun()  # el intervalo del fragmento se fija al dibujar la página entera
 
 
@@ -138,15 +136,15 @@ def _mover(clave, d, total):
     _ir(clave, min(max(1, st.session_state.get(clave, 1) + d), total))
 
 
-def controles(clave, total, compacto=False):
-    """Fila Inicio · Atrás · Reproducir · Adelante · Final. `compacto`: solo iconos (para columnas estrechas)."""
-    b = st.columns([1, 1, 3, 1, 1] if compacto else 5)
+def controles(clave, total):
+    """Fila Inicio · Atrás · Reproducir · Adelante · Final."""
+    b = st.columns(5)
     botones = [(0, 'Inicio', 'first_page', _ir, (clave, 1)), (1, 'Atrás', 'chevron_left', _mover, (clave, -1, total)),
                (3, 'Adelante', 'chevron_right', _mover, (clave, 1, total)), (4, 'Final', 'last_page', _ir, (clave, total))]
     for i, texto, icono, accion, args in botones:
-        b[i].button('' if compacto else texto, icon=f':material/{icono}:', help=texto if compacto else None,
-                    key=f'{clave}_{icono}', on_click=accion, args=args, width='stretch')
-    boton_reproducir(clave, total, b[2], solo_icono=compacto, width='stretch')
+        b[i].button(texto, icon=f':material/{icono}:', key=f'{clave}_{icono}', on_click=accion, args=args,
+                    width='stretch')
+    boton_reproducir(clave, total, b[2], width='stretch')
 
 
 def ficha(clave, valor, texto):

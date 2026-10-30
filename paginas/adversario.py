@@ -67,26 +67,23 @@ def piedra_papel_tijera(rondas):
     return pd.DataFrame(filas), suma / rondas
 
 
-izq, der = st.columns([3, 1], gap='large')
-with der:
-    rondas = st.select_slider('Rondas jugadas', [10, 100, 1000, 10000], value=1000, key='ppt_rondas')
-    df, media = piedra_papel_tijera(rondas)
-    for k, nombre in enumerate(JUGADAS):
-        st.metric(f'{nombre}, en promedio', f'{media[k]:.1%}')
-with izq:
-    color = alt.Color('jugada:N', title=None, scale=alt.Scale(domain=JUGADAS, range=[AZUL, NARANJA, AQUA]),
-                      legend=alt.Legend(orient='top'))
-    x = alt.X('ronda:Q', title='Ronda', scale=alt.Scale(type='log'))
-    ronda_a_ronda = alt.Chart(df).mark_line(strokeWidth=1, opacity=0.35).encode(x=x, y='peso:Q', color=color)
-    promedio = alt.Chart(df).mark_line(strokeWidth=2.5).encode(
-        x=x, y=alt.Y('media:Q', title='Frecuencia con que juega cada opción', scale=alt.Scale(domain=[0, 1]),
-                     axis=alt.Axis(format='%')),
-        color=color, tooltip=['ronda', 'jugada', alt.Tooltip('media:Q', title='promedio', format='.1%'),
-                              alt.Tooltip('peso:Q', title='en esta ronda', format='.1%')])
-    tercio = alt.Chart(pd.DataFrame(dict(y=[1 / 3]))).mark_rule(color=GRIS, strokeDash=[4, 4]).encode(y='y:Q')
-    st.altair_chart((tercio + ronda_a_ronda + promedio).properties(height=280), width='stretch')
-    st.caption('Líneas finas: los pesos de cada ronda, que oscilan porque el rival siempre contraataca. Líneas '
-               'gruesas: el promedio acumulado, que se acerca a un tercio.')
+rondas = st.select_slider('Rondas jugadas', [10, 100, 1000, 10000], value=1000, key='ppt_rondas')
+df, media = piedra_papel_tijera(rondas)
+color = alt.Color('jugada:N', title=None, scale=alt.Scale(domain=JUGADAS, range=[AZUL, NARANJA, AQUA]),
+                  legend=alt.Legend(orient='top'))
+x = alt.X('ronda:Q', title='Ronda', scale=alt.Scale(type='log'))
+ronda_a_ronda = alt.Chart(df).mark_line(strokeWidth=1, opacity=0.35).encode(x=x, y='peso:Q', color=color)
+promedio = alt.Chart(df).mark_line(strokeWidth=2.5).encode(
+    x=x, y=alt.Y('media:Q', title='Frecuencia con que juega cada opción', scale=alt.Scale(domain=[0, 1]),
+                 axis=alt.Axis(format='%')),
+    color=color, tooltip=['ronda', 'jugada', alt.Tooltip('media:Q', title='promedio', format='.1%'),
+                          alt.Tooltip('peso:Q', title='en esta ronda', format='.1%')])
+tercio = alt.Chart(pd.DataFrame(dict(y=[1 / 3]))).mark_rule(color=GRIS, strokeDash=[4, 4]).encode(y='y:Q')
+st.altair_chart((tercio + ronda_a_ronda + promedio).properties(height=280), width='stretch')
+st.caption('Líneas finas: los pesos de cada ronda, que oscilan porque el rival siempre contraataca. Líneas '
+           'gruesas: el promedio acumulado, que se acerca a un tercio.')
+for col, nombre, m in zip(st.columns(3), JUGADAS, media):
+    col.metric(f'{nombre}, en promedio', f'{m:.1%}')
 
 st.markdown('La regla de Hedge, aplicada al examinador: el peso de cada secuencia $s$ en la ronda $t$ crece '
             'exponencialmente con la pérdida que el afinador **ya acumuló** en ella.')
@@ -107,46 +104,43 @@ st.caption(f'η controla cuánto reacciona el examinador. Con η = √(8 ln N / 
 
 # ---------------------------------------------------------------- la pérdida
 st.markdown('### Cómo se califica cada secuencia')
-izq, der = st.columns([2, 3], gap='large')
-with izq:
-    st.markdown(
-        r"""
+r = np.geomspace(0.05, 20, 120)
+dfl = pd.DataFrame(dict(r=r, l=np.clip((1 + np.log10(r)) / 2, 0, 1)))
+curva = alt.Chart(dfl).mark_line(color=AZUL, strokeWidth=2).encode(
+    x=alt.X('r:Q', title='Nodos de θ ÷ nodos de la de libro', scale=alt.Scale(type='log'),
+            axis=alt.Axis(values=[0.1, 0.3, 1, 3, 10], format='~g')),
+    y=alt.Y('l:Q', title='Pérdida ℓ', scale=alt.Scale(domain=[0, 1.05])),
+    tooltip=[alt.Tooltip('r:Q', title='proporción', format='.2f'), alt.Tooltip('l:Q', title='ℓ', format='.2f')])
+marcas = pd.DataFrame(dict(r=[0.1, 1, 10], l=[0, 0.5, 1], t=['10× más rápida', 'empate', '10× más lenta']))
+puntos = alt.Chart(marcas).mark_point(filled=True, size=70, color=AZUL).encode(x='r:Q', y='l:Q')
+textos = alt.Chart(marcas).mark_text(dx=8, dy=-10, align='left', color=TINTA_2).encode(x='r:Q', y='l:Q', text='t:N')
+fallo = alt.Chart(pd.DataFrame(dict(y=[1]))).mark_rule(color=NARANJA, strokeDash=[5, 4]).encode(y='y:Q')
+fallo_t = alt.Chart(pd.DataFrame(dict(y=[1], r=[0.05]))).mark_text(
+    align='left', dy=-8, color=NARANJA, fontWeight=600).encode(x='r:Q', y='y:Q',
+                                                                text=alt.value('energía equivocada: ℓ = 1'))
+st.altair_chart((fallo + fallo_t + curva + puntos + textos).properties(height=260), width='stretch')
+st.markdown(
+    r"""
 Una carrera contra la configuración de libro, secuencia por secuencia:
 
 - si θ **no llega a la mejor energía**, queda descalificada: $\ell = 1$;
 - si llega, se compara cuántos nodos gastó con los que gastó la de libro.
 """
-    )
-    ecuacion(r'\ell = \frac{1}{2}\left(1 + \log_{10}\frac{\text{nodos}_\theta}{\text{nodos}_\text{libro}}\right)',
-             [(r'\ell', 'pérdida de la configuración en una secuencia: 0 es lo mejor, 1 lo peor.'),
-              (r'\text{nodos}_\theta', r'cadenas que A* tuvo que expandir con la configuración $\theta$.'),
-              (r'\text{nodos}_\text{libro}', 'las que expandió con la configuración de libro.'),
-              (r'\log_{10}', r'mide el cociente en potencias de 10: +1 si $\theta$ gastó diez veces más, −1 si '
-                             'gastó diez veces menos, 0 si igual.'),
-              (r'\tfrac{1}{2}(1 + \cdot)', 'lleva ese rango de −1…+1 a 0…1.')])
-    st.markdown(
-        r"""
+)
+ecuacion(r'\ell = \frac{1}{2}\left(1 + \log_{10}\frac{\text{nodos}_\theta}{\text{nodos}_\text{libro}}\right)',
+         [(r'\ell', 'pérdida de la configuración en una secuencia: 0 es lo mejor, 1 lo peor.'),
+          (r'\text{nodos}_\theta', r'cadenas que A* tuvo que expandir con la configuración $\theta$.'),
+          (r'\text{nodos}_\text{libro}', 'las que expandió con la configuración de libro.'),
+          (r'\log_{10}', r'mide el cociente en potencias de 10: +1 si $\theta$ gastó diez veces más, −1 si '
+                         'gastó diez veces menos, 0 si igual.'),
+          (r'\tfrac{1}{2}(1 + \cdot)', 'lleva ese rango de −1…+1 a 0…1.')])
+st.markdown(
+    r"""
 recortada entre 0 y 1: **0.5 es empatar**, 0 es ser diez veces más rápida y 1 diez veces más lenta.
 """
-    )
-    st.caption(f'Por eso el juego usa {N} secuencias y no 45: en 4 la configuración de libro no llega a la mejor '
-               'energía y no sirve de referencia.')
-with der:
-    r = np.geomspace(0.05, 20, 120)
-    dfl = pd.DataFrame(dict(r=r, l=np.clip((1 + np.log10(r)) / 2, 0, 1)))
-    curva = alt.Chart(dfl).mark_line(color=AZUL, strokeWidth=2).encode(
-        x=alt.X('r:Q', title='Nodos de θ ÷ nodos de la de libro', scale=alt.Scale(type='log'),
-                axis=alt.Axis(values=[0.1, 0.3, 1, 3, 10], format='~g')),
-        y=alt.Y('l:Q', title='Pérdida ℓ', scale=alt.Scale(domain=[0, 1.05])),
-        tooltip=[alt.Tooltip('r:Q', title='proporción', format='.2f'), alt.Tooltip('l:Q', title='ℓ', format='.2f')])
-    marcas = pd.DataFrame(dict(r=[0.1, 1, 10], l=[0, 0.5, 1], t=['10× más rápida', 'empate', '10× más lenta']))
-    puntos = alt.Chart(marcas).mark_point(filled=True, size=70, color=AZUL).encode(x='r:Q', y='l:Q')
-    textos = alt.Chart(marcas).mark_text(dx=8, dy=-10, align='left', color=TINTA_2).encode(x='r:Q', y='l:Q', text='t:N')
-    fallo = alt.Chart(pd.DataFrame(dict(y=[1]))).mark_rule(color=NARANJA, strokeDash=[5, 4]).encode(y='y:Q')
-    fallo_t = alt.Chart(pd.DataFrame(dict(y=[1], r=[0.05]))).mark_text(
-        align='left', dy=-8, color=NARANJA, fontWeight=600).encode(x='r:Q', y='y:Q',
-                                                                    text=alt.value('energía equivocada: ℓ = 1'))
-    st.altair_chart((fallo + fallo_t + curva + puntos + textos).properties(height=260), width='stretch')
+)
+st.caption(f'Por eso el juego usa {N} secuencias y no 45: en 4 la configuración de libro no llega a la mejor '
+           'energía y no sirve de referencia.')
 idea('Se compara con la de libro <b>en cada secuencia</b>, no en nodos absolutos. Si no, el examinador pondría todo '
      'el peso en las secuencias largas, que son caras para cualquiera, y no aprendería nada de θ.',
      titulo='¿Por qué relativo?')
@@ -191,24 +185,21 @@ st.markdown('')
 rondas_df = pd.DataFrame([dict(ronda=t, valor=rd['valor'],
                                efectivas=math.exp(-sum(p * math.log(p) for p in rd['p'] if p > 0)))
                           for t, rd in enumerate(H['rondas'], start=1)])
-izq, der = st.columns(2, gap='large')
-with izq:
-    linea = alt.Chart(rondas_df).mark_line(color=AZUL, strokeWidth=2, point=alt.OverlayMarkDef(size=50)).encode(
-        x=alt.X('ronda:Q', title='Ronda', axis=alt.Axis(tickMinStep=1)),
-        y=alt.Y('valor:Q', title='Nota del examen (pérdida ponderada)', scale=alt.Scale(domain=[0.25, 0.55])),
-        tooltip=['ronda', alt.Tooltip('valor:Q', format='.4f')])
-    empate = alt.Chart(pd.DataFrame(dict(y=[0.5]))).mark_rule(color=GRIS, strokeDash=[4, 4]).encode(y='y:Q')
-    st.altair_chart((empate + linea).properties(height=230), width='stretch')
-    st.caption('Sube hasta casi 0.5: el examinador va encontrando dónde nadie mejora a la de libro.')
-with der:
-    linea = alt.Chart(rondas_df).mark_line(color=AZUL, strokeWidth=2, point=alt.OverlayMarkDef(size=50)).encode(
-        x=alt.X('ronda:Q', title='Ronda', axis=alt.Axis(tickMinStep=1)),
-        y=alt.Y('efectivas:Q', title='Secuencias que «mira» el examinador', scale=alt.Scale(domain=[0, N + 2])),
-        tooltip=['ronda', alt.Tooltip('efectivas:Q', title='número efectivo', format='.1f')])
-    tope = alt.Chart(pd.DataFrame(dict(y=[N]))).mark_rule(color=GRIS, strokeDash=[4, 4]).encode(y='y:Q')
-    st.altair_chart((tope + linea).properties(height=230), width='stretch')
-    st.caption('Número efectivo de secuencias, $e^{\\text{entropía}}$: de 41 baja a unas 21. El examinador se '
-               'concentra, pero no se obsesiona con dos o tres.')
+linea = alt.Chart(rondas_df).mark_line(color=AZUL, strokeWidth=2, point=alt.OverlayMarkDef(size=50)).encode(
+    x=alt.X('ronda:Q', title='Ronda', axis=alt.Axis(tickMinStep=1)),
+    y=alt.Y('valor:Q', title='Nota del examen (pérdida ponderada)', scale=alt.Scale(domain=[0.25, 0.55])),
+    tooltip=['ronda', alt.Tooltip('valor:Q', format='.4f')])
+empate = alt.Chart(pd.DataFrame(dict(y=[0.5]))).mark_rule(color=GRIS, strokeDash=[4, 4]).encode(y='y:Q')
+st.altair_chart((empate + linea).properties(height=230), width='stretch')
+st.caption('Sube hasta casi 0.5: el examinador va encontrando dónde nadie mejora a la de libro.')
+linea = alt.Chart(rondas_df).mark_line(color=AZUL, strokeWidth=2, point=alt.OverlayMarkDef(size=50)).encode(
+    x=alt.X('ronda:Q', title='Ronda', axis=alt.Axis(tickMinStep=1)),
+    y=alt.Y('efectivas:Q', title='Secuencias que «mira» el examinador', scale=alt.Scale(domain=[0, N + 2])),
+    tooltip=['ronda', alt.Tooltip('efectivas:Q', title='número efectivo', format='.1f')])
+tope = alt.Chart(pd.DataFrame(dict(y=[N]))).mark_rule(color=GRIS, strokeDash=[4, 4]).encode(y='y:Q')
+st.altair_chart((tope + linea).properties(height=230), width='stretch')
+st.caption('Número efectivo de secuencias, $e^{\\text{entropía}}$: de 41 baja a unas 21. El examinador se '
+           'concentra, pero no se obsesiona con dos o tres.')
 
 with st.expander('Tabla de las rondas'):
     filas = []

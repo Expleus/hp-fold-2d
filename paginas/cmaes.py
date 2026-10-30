@@ -161,58 +161,55 @@ def fondo(nombre):
 @fragmento('cm_gen', segundos=0.6)
 def nube():
     avanzar('cm_gen', GENS)
-    izq, der = st.columns([3, 2], gap='large')
-    with der:
-        nombre = st.segmented_control('Problema', list(FUNCIONES), default='Valle inclinado', key='cm_fun')
-        nombre = nombre or 'Valle inclinado'
-        g = st.slider('Generación', 1, GENS, key='cm_gen', on_change=quieto, args=('cm_gen',))
-        controles('cm_gen', GENS, compacto=True)
-        gens = demo(nombre)
-        G = gens[g - 1]
-        st.markdown(
-            f"""
+    nombre = st.segmented_control('Problema', list(FUNCIONES), default='Valle inclinado', key='cm_fun')
+    nombre = nombre or 'Valle inclinado'
+    gens = demo(nombre)
+    g = st.slider('Generación', 1, GENS, key='cm_gen', on_change=quieto, args=('cm_gen',))
+    controles('cm_gen', GENS)
+    G = gens[g - 1]
+    fd = fondo(nombre)
+    capa = alt.Chart(fd).mark_rect().encode(
+        x=alt.X('x:Q', title='Perilla 1', scale=alt.Scale(domain=[-4, 4], nice=False)), x2='x2:Q',
+        y=alt.Y('y:Q', title='Perilla 2', scale=alt.Scale(domain=[-4, 4], nice=False)), y2='y2:Q',
+        color=alt.Color('v:Q', scale=alt.Scale(range=['#fbfaf7', '#9fb3cc']), legend=None), tooltip=alt.value(None))
+    m = np.array(G['media'])
+    S = (G['sigma'] ** 2) * np.array(G['C'])
+    val, vec = np.linalg.eigh(S)
+    t = np.linspace(0, 2 * np.pi, 80)
+    pts = m[:, None] + 2 * vec @ (np.sqrt(np.maximum(val, 0))[:, None] * np.vstack([np.cos(t), np.sin(t)]))
+    elipse = alt.Chart(pd.DataFrame(dict(x=pts[0], y=pts[1], o=range(80)))).mark_line(
+        color=AZUL, strokeWidth=2, clip=True).encode(x='x:Q', y='y:Q', order='o:Q')
+    X = np.array(G['X'])
+    dfp = pd.DataFrame(dict(x=X[:, 0], y=X[:, 1], valor=G['vals'],
+                            tipo=['elegido' if i in G['elegidos'] else 'descartado' for i in range(len(X))]))
+    puntos = alt.Chart(dfp).mark_point(size=70, strokeWidth=2, clip=True).encode(
+        x='x:Q', y='y:Q',
+        color=alt.Color('tipo:N', scale=alt.Scale(domain=['elegido', 'descartado'], range=[AZUL, GRIS]),
+                        legend=alt.Legend(orient='bottom', title=None)),
+        fill=alt.Fill('tipo:N', scale=alt.Scale(domain=['elegido', 'descartado'], range=[AZUL, 'transparent']),
+                      legend=None),
+        tooltip=[alt.Tooltip('valor:Q', title='Valor', format='.3g')])
+    camino = pd.DataFrame([dict(x=x[0], y=x[1], o=i) for i, x in enumerate(d['media'] for d in gens[:g])])
+    rastro = alt.Chart(camino).mark_line(color=NARANJA, strokeWidth=1.5, opacity=0.6, clip=True).encode(
+        x='x:Q', y='y:Q', order='o:Q')
+    centro = alt.Chart(pd.DataFrame(dict(x=[m[0]], y=[m[1]]))).mark_point(
+        shape='diamond', size=140, filled=True, color=NARANJA, stroke='white', strokeWidth=1.5, clip=True
+    ).encode(x='x:Q', y='y:Q')
+    meta = FUNCIONES[nombre][2]
+    objetivo = alt.Chart(pd.DataFrame(dict(x=[meta[0]], y=[meta[1]]))).mark_point(
+        shape='cross', size=90, color=TINTA_2, filled=True).encode(x='x:Q', y='y:Q')
+    st.altair_chart((capa + objetivo + rastro + elipse + puntos + centro).properties(height=480),
+                    width='stretch')
+    st.markdown(
+        f"""
 1. **Muestrear.** Se lanzan {LAM} puntos al azar desde una «nube» (la elipse azul).
 2. **Ordenar.** Se evalúan y se ordenan. Solo importa el **orden**, no cuánto mejor es uno que otro.
 3. **Moverse.** El centro de la nube (rombo naranja) se desplaza hacia los {MU_} mejores (puntos azules).
 4. **Deformarse.** La nube se **estira** en la dirección en que se avanzó y se **encoge** cuando ya está cerca.
 """
-        )
-        st.caption(f'Tamaño de la nube en esta generación: σ = {G["sigma"]:.3f}. Mejor valor de la generación: '
-                   f'{min(G["vals"]):.3g}.')
-    with izq:
-        fd = fondo(nombre)
-        capa = alt.Chart(fd).mark_rect().encode(
-            x=alt.X('x:Q', title='Perilla 1', scale=alt.Scale(domain=[-4, 4], nice=False)), x2='x2:Q',
-            y=alt.Y('y:Q', title='Perilla 2', scale=alt.Scale(domain=[-4, 4], nice=False)), y2='y2:Q',
-            color=alt.Color('v:Q', scale=alt.Scale(range=['#fbfaf7', '#9fb3cc']), legend=None), tooltip=alt.value(None))
-        m = np.array(G['media'])
-        S = (G['sigma'] ** 2) * np.array(G['C'])
-        val, vec = np.linalg.eigh(S)
-        t = np.linspace(0, 2 * np.pi, 80)
-        pts = m[:, None] + 2 * vec @ (np.sqrt(np.maximum(val, 0))[:, None] * np.vstack([np.cos(t), np.sin(t)]))
-        elipse = alt.Chart(pd.DataFrame(dict(x=pts[0], y=pts[1], o=range(80)))).mark_line(
-            color=AZUL, strokeWidth=2, clip=True).encode(x='x:Q', y='y:Q', order='o:Q')
-        X = np.array(G['X'])
-        dfp = pd.DataFrame(dict(x=X[:, 0], y=X[:, 1], valor=G['vals'],
-                                tipo=['elegido' if i in G['elegidos'] else 'descartado' for i in range(len(X))]))
-        puntos = alt.Chart(dfp).mark_point(size=70, strokeWidth=2, clip=True).encode(
-            x='x:Q', y='y:Q',
-            color=alt.Color('tipo:N', scale=alt.Scale(domain=['elegido', 'descartado'], range=[AZUL, GRIS]),
-                            legend=alt.Legend(orient='bottom', title=None)),
-            fill=alt.Fill('tipo:N', scale=alt.Scale(domain=['elegido', 'descartado'], range=[AZUL, 'transparent']),
-                          legend=None),
-            tooltip=[alt.Tooltip('valor:Q', title='Valor', format='.3g')])
-        camino = pd.DataFrame([dict(x=x[0], y=x[1], o=i) for i, x in enumerate(d['media'] for d in gens[:g])])
-        rastro = alt.Chart(camino).mark_line(color=NARANJA, strokeWidth=1.5, opacity=0.6, clip=True).encode(
-            x='x:Q', y='y:Q', order='o:Q')
-        centro = alt.Chart(pd.DataFrame(dict(x=[m[0]], y=[m[1]]))).mark_point(
-            shape='diamond', size=140, filled=True, color=NARANJA, stroke='white', strokeWidth=1.5, clip=True
-        ).encode(x='x:Q', y='y:Q')
-        meta = FUNCIONES[nombre][2]
-        objetivo = alt.Chart(pd.DataFrame(dict(x=[meta[0]], y=[meta[1]]))).mark_point(
-            shape='cross', size=90, color=TINTA_2, filled=True).encode(x='x:Q', y='y:Q')
-        st.altair_chart((capa + objetivo + rastro + elipse + puntos + centro).properties(height=430),
-                        width='stretch')
+    )
+    st.caption(f'Tamaño de la nube en esta generación: σ = {G["sigma"]:.3f}. Mejor valor de la generación: '
+               f'{min(G["vals"]):.3g}.')
 
 
 nube()
@@ -274,41 +271,38 @@ filas = [dict(nombre=etiqueta(c), paridad='cadena entera' if c['global_'] else '
               error=c['prueba']['error'], costo=c['prueba']['costo'], aciertos=c['prueba']['aciertos'],
               domina=c['domina']) for c in corridas]
 df = pd.DataFrame(filas)
-izq, der = st.columns([3, 2], gap='large')
-with izq:
-    bx, by = base['prueba']['error'], base['prueba']['costo']
-    zona = alt.Chart(pd.DataFrame(dict(x=[-0.002], x2=[bx], y=[3.0], y2=[by]))).mark_rect(
-        color=AZUL, opacity=0.06).encode(x='x:Q', x2='x2:Q', y='y:Q', y2='y2:Q')
-    zona_txt = alt.Chart(pd.DataFrame(dict(x=[-0.001], y=[3.02]))).mark_text(
-        align='left', color=AZUL, fontSize=11, fontWeight=600).encode(x='x:Q', y='y:Q',
-                                                                      text=alt.value('mejor que la base en ambas'))
-    puntos = alt.Chart(df).mark_point(size=110, filled=True, strokeWidth=2).encode(
-        x=alt.X('error:Q', title='Error en el conjunto de prueba', scale=alt.Scale(domain=[-0.002, 0.046])),
-        y=alt.Y('costo:Q', title='Costo (log₁₀ nodos)', scale=alt.Scale(domain=[3.0, 3.56])),
-        color=alt.Color('r4:N', title='r4', scale=alt.Scale(domain=['0', '1', '2'], range=[AZUL, NARANJA, AQUA]),
-                        legend=alt.Legend(orient='top')),
-        shape=alt.Shape('paridad:N', title='Paridad de',
-                        scale=alt.Scale(domain=['cadena entera', 'lo que falta'], range=['circle', 'square']),
-                        legend=alt.Legend(orient='top')),
-        tooltip=['nombre', 'paridad', 'r4', alt.Tooltip('error:Q', format='.4f'), alt.Tooltip('costo:Q', format='.3f'),
-                 'aciertos'])
-    nombres = alt.Chart(df).mark_text(dx=12, dy=-9, color=TINTA_2, fontWeight=600).encode(
-        x='error:Q', y='costo:Q', text='nombre:N')
-    b = alt.Chart(pd.DataFrame(dict(x=[bx], y=[by], t=['libro']))).mark_point(
-        shape='cross', size=150, filled=True, color=GRIS).encode(x='x:Q', y='y:Q')
-    bt = alt.Chart(pd.DataFrame(dict(x=[bx], y=[by]))).mark_text(dx=10, dy=12, color=GRIS, fontWeight=600).encode(
-        x='x:Q', y='y:Q', text=alt.value('de libro'))
-    st.altair_chart((zona + zona_txt + puntos + nombres + b + bt).properties(height=340), width='stretch')
-    st.caption('G = paridad de la cadena entera, R = de lo que falta; el número es r4. Abajo a la izquierda es mejor.')
-with der:
-    st.dataframe(
-        df.assign(error=df.error.round(4), costo=df.costo.round(3),
-                  domina=df.domina.map({True: '✓', False: ''}))[['nombre', 'error', 'costo', 'aciertos', 'domina']]
-        .rename(columns={'nombre': 'Combinación', 'error': 'Error', 'costo': 'Costo', 'aciertos': 'Aciertos (de 45)',
-                         'domina': '✓'}),
-        hide_index=True, width='stretch')
-    st.caption(f"De libro: error {base['prueba']['error']:.4f}, costo {base['prueba']['costo']:.3f}, "
-               f"{base['prueba']['aciertos']} aciertos. ✓ = mejor que la de libro en error y en costo.")
+bx, by = base['prueba']['error'], base['prueba']['costo']
+zona = alt.Chart(pd.DataFrame(dict(x=[-0.002], x2=[bx], y=[3.0], y2=[by]))).mark_rect(
+    color=AZUL, opacity=0.06).encode(x='x:Q', x2='x2:Q', y='y:Q', y2='y2:Q')
+zona_txt = alt.Chart(pd.DataFrame(dict(x=[-0.001], y=[3.02]))).mark_text(
+    align='left', color=AZUL, fontSize=11, fontWeight=600).encode(x='x:Q', y='y:Q',
+                                                                  text=alt.value('mejor que la base en ambas'))
+puntos = alt.Chart(df).mark_point(size=110, filled=True, strokeWidth=2).encode(
+    x=alt.X('error:Q', title='Error en el conjunto de prueba', scale=alt.Scale(domain=[-0.002, 0.046])),
+    y=alt.Y('costo:Q', title='Costo (log₁₀ nodos)', scale=alt.Scale(domain=[3.0, 3.56])),
+    color=alt.Color('r4:N', title='r4', scale=alt.Scale(domain=['0', '1', '2'], range=[AZUL, NARANJA, AQUA]),
+                    legend=alt.Legend(orient='top')),
+    shape=alt.Shape('paridad:N', title='Paridad de',
+                    scale=alt.Scale(domain=['cadena entera', 'lo que falta'], range=['circle', 'square']),
+                    legend=alt.Legend(orient='top')),
+    tooltip=['nombre', 'paridad', 'r4', alt.Tooltip('error:Q', format='.4f'), alt.Tooltip('costo:Q', format='.3f'),
+             'aciertos'])
+nombres = alt.Chart(df).mark_text(dx=12, dy=-9, color=TINTA_2, fontWeight=600).encode(
+    x='error:Q', y='costo:Q', text='nombre:N')
+b = alt.Chart(pd.DataFrame(dict(x=[bx], y=[by], t=['libro']))).mark_point(
+    shape='cross', size=150, filled=True, color=GRIS).encode(x='x:Q', y='y:Q')
+bt = alt.Chart(pd.DataFrame(dict(x=[bx], y=[by]))).mark_text(dx=10, dy=12, color=GRIS, fontWeight=600).encode(
+    x='x:Q', y='y:Q', text=alt.value('de libro'))
+st.altair_chart((zona + zona_txt + puntos + nombres + b + bt).properties(height=340), width='stretch')
+st.caption('G = paridad de la cadena entera, R = de lo que falta; el número es r4. Abajo a la izquierda es mejor.')
+st.dataframe(
+    df.assign(error=df.error.round(4), costo=df.costo.round(3),
+              domina=df.domina.map({True: '✓', False: ''}))[['nombre', 'error', 'costo', 'aciertos', 'domina']]
+    .rename(columns={'nombre': 'Combinación', 'error': 'Error', 'costo': 'Costo', 'aciertos': 'Aciertos (de 45)',
+                     'domina': '✓'}),
+    hide_index=True, width='stretch')
+st.caption(f"De libro: error {base['prueba']['error']:.4f}, costo {base['prueba']['costo']:.3f}, "
+           f"{base['prueba']['aciertos']} aciertos. ✓ = mejor que la de libro en error y en costo.")
 
 g1 = next(c for c in corridas if c['global_'] and c['r4'] == 1)
 ahorro = 1 - 10 ** (g1['prueba']['costo'] - base['prueba']['costo'])
@@ -339,10 +333,9 @@ with st.expander('Valores encontrados y convergencia'):
                                                          range=[[1, 0], [5, 3]]), legend=alt.Legend(orient='top')),
                detail='nombre:N', tooltip=['nombre', 'gen', alt.Tooltip('error:Q', format='.4f'),
                                            alt.Tooltip('costo:Q', format='.3f')])
-    c1, c2 = st.columns(2)
-    c1.altair_chart(alt.Chart(conv).mark_line(strokeWidth=2, interpolate='step-after').encode(
+    st.altair_chart(alt.Chart(conv).mark_line(strokeWidth=2, interpolate='step-after').encode(
         y=alt.Y('error:Q', title='Error (entrenamiento)'), **enc).properties(height=230), width='stretch')
-    c2.altair_chart(alt.Chart(conv).mark_line(strokeWidth=2, interpolate='step-after').encode(
+    st.altair_chart(alt.Chart(conv).mark_line(strokeWidth=2, interpolate='step-after').encode(
         y=alt.Y('costo:Q', title='Costo (entrenamiento)', scale=alt.Scale(zero=False)), **enc).properties(height=230),
         width='stretch')
     st.caption('Se muestra la mejor configuración encontrada hasta cada generación. El costo a veces sube: es el '

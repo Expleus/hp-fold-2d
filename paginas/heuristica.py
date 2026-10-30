@@ -96,32 +96,29 @@ df = pd.DataFrame([
     dict(cota='Paridad: 2·min + 2', valor=2 * min(p, q) + 2, tipo='válida'),
     dict(cota='Paridad con error: min + 2', valor=min(p, q) + 2, tipo='con error'),
 ])
-izq, der = st.columns([3, 2], gap='large')
-with izq:
-    barras = alt.Chart(df).mark_bar(cornerRadiusEnd=4, height=24).encode(
-        x=alt.X('valor:Q', title='Contactos como máximo', scale=alt.Scale(domainMin=0)),
-        y=alt.Y('cota:N', title=None, sort=None, axis=alt.Axis(labelLimit=240)),
-        color=alt.Color('tipo:N', scale=alt.Scale(domain=['válida', 'con error'], range=[GRIS_CLARO, '#e9c9c9']),
-                        legend=None),
-        tooltip=[alt.Tooltip('cota:N', title='Cota'), alt.Tooltip('valor:Q', title='Máximo')])
-    texto = barras.mark_text(align='left', dx=4, color='#52514e').encode(text='valor:Q')
-    real = alt.Chart(pd.DataFrame(dict(x=[-e_opt]))).mark_rule(color=NARANJA, strokeWidth=2.5).encode(x='x:Q')
-    etiqueta = alt.Chart(pd.DataFrame(dict(x=[-e_opt], y=['Básica: 2 × H']))).mark_text(
-        align='left', dx=5, dy=-18, color=NARANJA, fontWeight=600).encode(
-        x='x:Q', y=alt.Y('y:N', sort=None), text=alt.value(f'real: {abs(e_opt):g}'))
-    st.altair_chart((barras + texto + real + etiqueta).properties(height=170), width='stretch')
-with der:
-    st.markdown(f'Mejor forma posible: **{abs(e_opt):g} contactos** ({fuente}).')
-    st.markdown(f'H pares: **{p:g}** · H impares: **{q:g}**')
-    if min(p, q) + 2 < -e_opt:
-        st.error('La versión con error promete **menos** de lo que se puede conseguir: A* podría descartar la mejor '
-                 'forma creyendo que no vale la pena.', icon=':material/error:')
-    elif p == 0 or q == 0:
-        st.info('Todas las H tienen la misma paridad: no pueden tocarse nunca. La cota de paridad lo ve; la básica, no.',
-                icon=':material/lightbulb:')
-    else:
-        st.caption('Una cota válida nunca queda a la izquierda de la línea naranja. Cuanto más cerca de ella, mejor '
-                   'guía a la búsqueda.')
+barras = alt.Chart(df).mark_bar(cornerRadiusEnd=4, height=24).encode(
+    x=alt.X('valor:Q', title='Contactos como máximo', scale=alt.Scale(domainMin=0)),
+    y=alt.Y('cota:N', title=None, sort=None, axis=alt.Axis(labelLimit=240)),
+    color=alt.Color('tipo:N', scale=alt.Scale(domain=['válida', 'con error'], range=[GRIS_CLARO, '#e9c9c9']),
+                    legend=None),
+    tooltip=[alt.Tooltip('cota:N', title='Cota'), alt.Tooltip('valor:Q', title='Máximo')])
+texto = barras.mark_text(align='left', dx=4, color='#52514e').encode(text='valor:Q')
+real = alt.Chart(pd.DataFrame(dict(x=[-e_opt]))).mark_rule(color=NARANJA, strokeWidth=2.5).encode(x='x:Q')
+etiqueta = alt.Chart(pd.DataFrame(dict(x=[-e_opt], y=['Básica: 2 × H']))).mark_text(
+    align='left', dx=5, dy=-18, color=NARANJA, fontWeight=600).encode(
+    x='x:Q', y=alt.Y('y:N', sort=None), text=alt.value(f'real: {abs(e_opt):g}'))
+st.altair_chart((barras + texto + real + etiqueta).properties(height=170), width='stretch')
+st.markdown(f'Mejor forma posible: **{abs(e_opt):g} contactos** ({fuente}).')
+st.markdown(f'H pares: **{p:g}** · H impares: **{q:g}**')
+if min(p, q) + 2 < -e_opt:
+    st.error('La versión con error promete **menos** de lo que se puede conseguir: A* podría descartar la mejor '
+             'forma creyendo que no vale la pena.', icon=':material/error:')
+elif p == 0 or q == 0:
+    st.info('Todas las H tienen la misma paridad: no pueden tocarse nunca. La cota de paridad lo ve; la básica, no.',
+            icon=':material/lightbulb:')
+else:
+    st.caption('Una cota válida nunca queda a la izquierda de la línea naranja. Cuanto más cerca de ella, mejor '
+               'guía a la búsqueda.')
 
 # ---------------------------------------------------------------- h completa
 st.markdown('### Juntando las piezas')
@@ -200,30 +197,28 @@ sub = barrido[barrido.sec == (elegida or 'HPHPPHHPHPPHPHHPPHPH')].copy()
 sub['resultado'] = sub.apply(lambda r: 'tope de nodos' if r.estado != 'ok' else
                              ('óptima' if r.energia <= r.optimo else 'peor que la óptima'), axis=1)
 dom = ['óptima', 'peor que la óptima', 'tope de nodos']
-izq, der = st.columns(2, gap='large')
-with izq:
-    graf = alt.Chart(sub).mark_line(color=GRIS_CLARO, strokeWidth=2).encode(
-        x=alt.X('w:Q', title='w'), y=alt.Y('nodos:Q', title='Nodos expandidos (escala log)', scale=alt.Scale(type='log')))
-    puntos = alt.Chart(sub).mark_point(filled=True, size=70).encode(
-        x='w:Q', y='nodos:Q',
-        color=alt.Color('resultado:N', title=None, scale=alt.Scale(domain=dom, range=[AZUL, NARANJA, GRIS]),
-                        legend=alt.Legend(orient='top')),
-        shape=alt.Shape('resultado:N', scale=alt.Scale(domain=dom, range=['circle', 'triangle-down', 'square']),
-                        legend=None),
-        tooltip=[alt.Tooltip('w:Q'), alt.Tooltip('nodos:Q', title='Nodos', format=','),
-                 alt.Tooltip('energia:Q', title='Energía'), alt.Tooltip('resultado:N', title='Resultado')])
-    uno = alt.Chart(pd.DataFrame(dict(x=[1.0]))).mark_rule(color=GRIS, strokeDash=[4, 4]).encode(x='x:Q')
-    st.altair_chart((graf + puntos + uno).properties(height=260), width='stretch')
-with der:
-    w1 = sub[sub.w == 1.0].iloc[0]
-    rapido = sub[(sub.resultado == 'óptima')].nsmallest(1, 'nodos')
-    st.metric('Con w = 1', f'{int(w1.nodos):,} nodos'.replace(',', '.'), help='La configuración de libro.')
-    if not rapido.empty and rapido.iloc[0].w != 1.0:
-        fila = rapido.iloc[0]
-        st.metric(f'Con w = {fila.w:g}', f'{int(fila.nodos):,} nodos'.replace(',', '.'),
-                  delta=f'{fila.nodos / w1.nodos - 1:+.0%}'.replace('.', ','), delta_color='inverse',
-                  help='El w más barato que todavía encuentra la mejor forma.')
-    st.caption(f'Los cuadrados grises agotaron el tope de {tope:,} nodos sin terminar.'.replace(',', '.') +
-               ' El punto dulce depende de la secuencia y de las otras cinco perillas: por eso se ajusta con datos.')
+graf = alt.Chart(sub).mark_line(color=GRIS_CLARO, strokeWidth=2).encode(
+    x=alt.X('w:Q', title='w'), y=alt.Y('nodos:Q', title='Nodos expandidos (escala log)', scale=alt.Scale(type='log')))
+puntos = alt.Chart(sub).mark_point(filled=True, size=70).encode(
+    x='w:Q', y='nodos:Q',
+    color=alt.Color('resultado:N', title=None, scale=alt.Scale(domain=dom, range=[AZUL, NARANJA, GRIS]),
+                    legend=alt.Legend(orient='top')),
+    shape=alt.Shape('resultado:N', scale=alt.Scale(domain=dom, range=['circle', 'triangle-down', 'square']),
+                    legend=None),
+    tooltip=[alt.Tooltip('w:Q'), alt.Tooltip('nodos:Q', title='Nodos', format=','),
+             alt.Tooltip('energia:Q', title='Energía'), alt.Tooltip('resultado:N', title='Resultado')])
+uno = alt.Chart(pd.DataFrame(dict(x=[1.0]))).mark_rule(color=GRIS, strokeDash=[4, 4]).encode(x='x:Q')
+st.altair_chart((graf + puntos + uno).properties(height=260), width='stretch')
+w1 = sub[sub.w == 1.0].iloc[0]
+rapido = sub[(sub.resultado == 'óptima')].nsmallest(1, 'nodos')
+m1, m2 = st.columns(2)
+m1.metric('Con w = 1', f'{int(w1.nodos):,} nodos'.replace(',', '.'), help='La configuración de libro.')
+if not rapido.empty and rapido.iloc[0].w != 1.0:
+    fila = rapido.iloc[0]
+    m2.metric(f'Con w = {fila.w:g}', f'{int(fila.nodos):,} nodos'.replace(',', '.'),
+              delta=f'{fila.nodos / w1.nodos - 1:+.0%}'.replace('.', ','), delta_color='inverse',
+              help='El w más barato que todavía encuentra la mejor forma.')
+st.caption(f'Los cuadrados grises agotaron el tope de {tope:,} nodos sin terminar.'.replace(',', '.') +
+           ' El punto dulce depende de la secuencia y de las otras cinco perillas: por eso se ajusta con datos.')
 
 navegacion('paginas/heuristica.py')
